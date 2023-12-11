@@ -49,7 +49,9 @@ class Agent
         if (empty($response->choices)) return;
 
         $choice = Arr::first($response->choices);
-        $respond = $choice->message->content;
+        $respond = $choice->text;
+
+        if (empty($respond)) return;
 
         $userPrompt = $this->user->id;
 

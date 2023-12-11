@@ -1,7 +1,7 @@
 import app from 'flarum/admin/app';
 import ChatGptSettings from "./components/ChatGptSettings";
 
-app.initializers.add('muhammedsaidckr/flarum-chatgpt', () => {
+app.initializers.add('muhammedsaidckr-chatgpt', () => {
   console.log('Hello, admin!')
   app.extensionData
     .for('muhammedsaidckr-chatgpt')

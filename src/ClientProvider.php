@@ -14,13 +14,6 @@ class ClientProvider extends AbstractServiceProvider
 {
     public function register()
     {
-//        $this->container->resolving(Agent::class, function (Container $container) {
-//            return new Agent(
-//                user: $container->make('flarum.actor'),
-//                client: $container->make(Client::class),
-//                model: $container->make('flarum.settings')->get('muhammedsaidckr-chatgpt.model')
-//        });
-        // See https://docs.flarum.org/extend/service-provider.html#service-provider for more information.
     }
 
     public function boot(Container $container)
@@ -28,7 +21,7 @@ class ClientProvider extends AbstractServiceProvider
         /** @var \Flarum\Settings\SettingsRepositoryInterface $settings */
         $settings = $this->container->make(SettingsRepositoryInterface::class);
 
-        $apiKey = $settings->get('muhammedsaidckr-chatgpt.openai-api-key');
+        $apiKey = $settings->get('muhammedsaidckr-chatgpt.api_key');
         $organisation = $settings->get('muhammedsaidckr-chatgpt.openai-api-organisation');
 
         if ($apiKey) {
