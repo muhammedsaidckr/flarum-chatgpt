@@ -36,7 +36,7 @@ class ClientProvider extends AbstractServiceProvider
 
     protected function getAgent(SettingsRepositoryInterface $settings, ExtensionManager $extensions): Agent
     {
-        $userId = $settings->get('muhammedsaidckr-chatgpt.user_prompt') ?? 'flarum';
+        $userId = $settings->get('muhammedsaidckr-chatgpt.user_prompt') ?? 1;
 
         /** @var \Flarum\User\UserRepository $users */
         $users = $this->container->make(UserRepository::class);
