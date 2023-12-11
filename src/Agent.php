@@ -13,16 +13,18 @@ use OpenAI\Client;
 
 class Agent
 {
-    protected int $maxTokens = 100;
+    protected int $maxTokens;
     protected string $model;
 
     public function __construct(
         public readonly User $user,
         protected ?Client    $client = null,
         string               $model = null,
+        int                  $maxTokens = null
     )
     {
         $this->model = $model ?? 'gpt-3.5-turbo-instruct';
+        $this->maxTokens = $maxTokens ?? 100;
     }
 
 //    public function operational(): bool
