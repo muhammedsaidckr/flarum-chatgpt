@@ -43,16 +43,29 @@ class Agent
     {
         $content = $discussion->firstPost->content;
 
-        $response = $this->client->completions()->create([
-            'model' => $this->model,
-            'prompt' => $content,
-            'max_tokens' => $this->maxTokens,
-        ]);
+        // use chat method to reply to the discussion
+
+        $response = $this->client->chat()->create(
+            [
+                'model' => $this->model,
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are a helpful assistant.'
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $content
+                    ]
+                ],
+                'max_tokens' => $this->maxTokens
+            ]
+        );
 
         if (empty($response->choices)) return;
 
         $choice = Arr::first($response->choices);
-        $respond = $choice->text;
+        $respond = $choice->message->content;
 
         if (empty($respond)) return;
 
