@@ -25,6 +25,7 @@ export default class ChatGptSettings extends ExtensionPage {
               setting: 'muhammedsaidckr-chatgpt.model',
               type: 'dropdown',
               options: {
+                'gpt-4-turbo': 'gpt-4-turbo',
                 'gpt-3.5-turbo-instruct': 'gpt-3.5-turbo-instruct',
                 'gpt-3.5-turbo-16k-0613': 'gpt-3.5-turbo-16k-0613',
                 'gpt-3.5-turbo-16k': 'gpt-3.5-turbo-16k',
@@ -62,6 +63,20 @@ export default class ChatGptSettings extends ExtensionPage {
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.user_prompt_badge_label'),
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.user_prompt_badge_help'),
             })}
+            {/* new setting for answer duration in minutes (default 5) */}
+            {this.buildSettingComponent({
+                setting: 'muhammedsaidckr-chatgpt.answer_duration',
+                type: 'number',
+                label: app.translator
+              }
+            )}
+            {/*If any user replied to post, the AI will not reply to that post setting*/}
+            {this.buildSettingComponent({
+                setting: 'muhammedsaidckr-chatgpt.enable_on_reply',
+                type: 'boolean',
+                label: app.translator
+              }
+            )}
             {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.enable_on_discussion_started',
               type: 'boolean',

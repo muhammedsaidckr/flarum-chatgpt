@@ -40,6 +40,22 @@ class Agent
 
     public function repliesTo(Discussion $discussion): void
     {
+        // check duration set in settings
+        $settings = resolve(SettingsRepositoryInterface::class);
+        $duration = $settings->get('muhammedsaidckr-chatgpt.duration');
+        // check if the discussion is greater or equal to the duration
+        if ($discussion->created_at->diffInMinutes() < $duration) {
+            return;
+        }
+
+        // check reply_to_post setting in settings
+        $replyToPost = $settings->get('muhammedsaidckr-chatgpt.reply_to_post');
+
+        // check if any user replied to the post and replyToPost setting is true
+        if ($replyToPost && $discussion->posts()->where('type', 'comment')->count() > 1) {
+            return;
+        }
+
         $content = $discussion->firstPost->content;
 
         $response = $this->client->completions()->create([
