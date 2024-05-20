@@ -1,7 +1,7 @@
 {
     "name": "@muhammedsaidckr/flarum-chatgpt",
     "private": true,
-    "version": "0.0.0",
+    "version": "1.1.1",
     "devDependencies": {
         "flarum-webpack-config": "^2.0.0",
         "webpack": "^5.65.0",
