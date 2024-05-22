@@ -40,6 +40,8 @@ return [
         ->default('muhammedsaidckr-chatgpt.answer_duration', 5)
         // If any user replied to post, the AI will not reply to that post setting
         ->default('muhammedsaidckr-chatgpt.reply_to_post', true)
+        ->default('muhammedsaidckr-chatgpt.role', 'You are a forum user')
+        ->default('muhammedsaidckr-chatgpt.prompt', 'Write a arguable or thankfully opinion asking or arguing something about an answer that has talked about "[title]" and who talked about [content]. Don\'t talk about what you would like or don\'t like. Speak in a close tone, like you are writing in a Tech Forum. Be random and unpredictable. Answer in [language].')
         ->serializeToForum('chatGptUserPromptId', 'muhammedsaidckr-chatgpt.user_prompt')
         ->serializeToForum('chatGptBadgeText', 'muhammedsaidckr-chatgpt.user_prompt_badge_text'),
 ];

@@ -42,6 +42,28 @@ class Agent
     public function repliesTo(Discussion $discussion): void
     {
         $content = $discussion->firstPost->content;
+        $title = $discussion->title;
+
+        // get settings from the database
+        $settings = resolve(SettingsRepositoryInterface::class);
+        // get role
+        $role = $settings->get('muhammedsaidckr-chatgpt.role');
+        if (empty($role)) {
+            // if the role is empty, set the role to default
+            $role = 'You are a helpful assistant.';
+        }
+        // get the prompt from the settings
+        $prompt = $settings->get('muhammedsaidckr-chatgpt.prompt');
+        if (empty($prompt)) {
+            // if the prompt is empty, set the prompt to default
+            $prompt = 'Write a arguable or thankfully opinion asking or arguing something about an answer that has talked about "[title]" and who talked about [content]. Don\'t talk about what you would like or don\'t like. Speak in a close tone, like you are writing in a Tech Forum. Be random and unpredictable. Answer in [language].';
+        }
+
+        // check prompt has [language] tag
+        if (strpos($prompt, '[language]') !== false) {
+            // replace the [language] tag with the language of the discussion
+            $prompt = str_replace('[language]', 'turkish', $prompt);
+        }
 
         // use chat method to reply to the discussion
 
@@ -51,11 +73,15 @@ class Agent
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'You are a helpful assistant.'
+                        'content' => $role
                     ],
                     [
                         'role' => 'user',
-                        'content' => $content
+                        'content' => str_replace(
+                            ['[title]', '[content]'],
+                            [$title, $content],
+                            $prompt
+                        )
                     ]
                 ],
                 'max_tokens' => $this->maxTokens

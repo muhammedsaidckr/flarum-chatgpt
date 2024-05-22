@@ -54,6 +54,20 @@ export default class ChatGptSettings extends ExtensionPage {
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.user_prompt_label'),
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.user_prompt_help'),
             })}
+            {/* new settings for role */}
+            {this.buildSettingComponent({
+              setting: 'muhammedsaidckr-chatgpt.role',
+              type: 'text',
+              label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.role_label'),
+              help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.role_help'),
+            })}
+            {/* new settings for prompt */}
+            {this.buildSettingComponent({
+              setting: 'muhammedsaidckr-chatgpt.prompt',
+              type: 'text',
+              label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.prompt_label'),
+              help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.prompt_help'),
+            })}
             {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.user_prompt_badge_text',
               type: 'text',
