@@ -13,6 +13,8 @@ namespace Msc\ChatGPT;
 
 use Flarum\Discussion\Event\Started;
 use Flarum\Extend;
+use Flarum\Post\Event\Posted;
+use Msc\ChatGPT\Listener\ReplyToCommentPost;
 use Msc\ChatGPT\Listener\ReplyToPost;
 
 return [
@@ -30,6 +32,8 @@ return [
 
     (new Extend\Event())
         ->listen(Started::class, ReplyToPost::class),
+    (new Extend\Event())
+        ->listen(Posted::class, ReplyToCommentPost::class),
 
     (new Extend\Settings())
         ->default('muhammedsaidckr-chatgpt.model', 'gpt-3.5-turbo-instruct')
@@ -41,7 +45,10 @@ return [
         // If any user replied to post, the AI will not reply to that post setting
         ->default('muhammedsaidckr-chatgpt.reply_to_post', true)
         ->default('muhammedsaidckr-chatgpt.role', 'You are a forum user')
-        ->default('muhammedsaidckr-chatgpt.prompt', 'Write a arguable or thankfully opinion asking or arguing something about an answer that has talked about "[title]" and who talked about [content]. Don\'t talk about what you would like or don\'t like. Speak in a close tone, like you are writing in a Tech Forum. Be random and unpredictable. Answer in [language].')
+        ->default('muhammedsaidckr-chatgpt.prompt',
+            'Write a arguable or thankfully opinion asking or arguing something about an answer that has talked about "[title]" and who talked about [content]. Don\'t talk about what you would like or don\'t like. Speak in a close tone, like you are writing in a Tech Forum. Be random and unpredictable. Answer in [language].')
+        ->default('muhammedsaidckr-chatgpt.continue_to_reply', true)
+        ->default('muhammedsaidckr-chatgpt.continue_to_reply_count', 5)
         ->serializeToForum('chatGptUserPromptId', 'muhammedsaidckr-chatgpt.user_prompt')
         ->serializeToForum('chatGptBadgeText', 'muhammedsaidckr-chatgpt.user_prompt_badge_text'),
 ];

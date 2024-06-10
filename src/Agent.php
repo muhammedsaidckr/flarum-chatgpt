@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use OpenAI;
 use OpenAI\Client;
 
+
 class Agent
 {
     protected int $maxTokens;
@@ -19,25 +20,13 @@ class Agent
 
     public function __construct(
         public readonly User $user,
-        protected ?Client    $client = null,
-        string               $model = null,
-        int                  $maxTokens = null
-    )
-    {
+        protected ?Client $client = null,
+        string $model = null,
+        int $maxTokens = null
+    ) {
         $this->model = $model ?? 'gpt-3.5-turbo-instruct';
         $this->maxTokens = $maxTokens ?? 100;
     }
-
-//    public function operational(): bool
-//    {
-//        return $this->client !== null;
-//    }
-//
-//    public
-//    function is(User $someone): bool
-//    {
-//        return $this->user->is($someone);
-//    }
 
     public function repliesTo(Discussion $discussion): void
     {
@@ -59,14 +48,8 @@ class Agent
             $prompt = 'Write a arguable or thankfully opinion asking or arguing something about an answer that has talked about "[title]" and who talked about [content]. Don\'t talk about what you would like or don\'t like. Speak in a close tone, like you are writing in a Tech Forum. Be random and unpredictable. Answer in [language].';
         }
 
-        // check prompt has [language] tag
-        if (strpos($prompt, '[language]') !== false) {
-            // replace the [language] tag with the language of the discussion
-            $prompt = str_replace('[language]', 'turkish', $prompt);
-        }
 
         // use chat method to reply to the discussion
-
         $response = $this->client->chat()->create(
             [
                 'model' => $this->model,
@@ -88,28 +71,18 @@ class Agent
             ]
         );
 
-        if (empty($response->choices)) return;
+        if (empty($response->choices)) {
+            return;
+        }
 
         $choice = Arr::first($response->choices);
         $respond = $choice->message->content;
 
-        if (empty($respond)) return;
+        if (empty($respond)) {
+            return;
+        }
 
         $userPrompt = $this->user->id;
-
-//        if (Str::startsWith($respond, 'FLAG: ')) {
-//            $flag = new Flag(
-//                Str::after($respond, 'FLAG: '),
-//                $discussion
-//            );
-//
-//            $flag();
-//        } else {
-//        $reply = new Reply(
-//            reply: $respond,
-//            shouldMention: $this->canMention,
-//            inReplyTo: $discussion
-//        );
 
         CommentPost::reply(
             discussionId: $discussion->id,
@@ -117,7 +90,82 @@ class Agent
             userId: $userPrompt,
             ipAddress: '127.0.0.1'
         )->save();
-//        }
+    }
+
+    public function repliesToCommentPost(CommentPost $commentPost)
+    {
+        // get the discussion title
+        $discussion = $commentPost->discussion;
+        $title = $discussion->title;
+        $content = $discussion->firstPost->content;
+
+
+        $settings = resolve(SettingsRepositoryInterface::class);
+        $role = $settings->get('muhammedsaidckr-chatgpt.role');
+        if (empty($role)) {
+            // if the role is empty, set the role to default
+            $role = 'You are a helpful assistant.';
+        }
+
+        $userPromptId = $settings->get('muhammedsaidckr-chatgpt.user_prompt');
+
+        if ($commentPost->user_id == $userPromptId) {
+            return;
+        }
+
+        // is it the first post?
+        if ($commentPost->number == 1) {
+            return;
+        }
+        $messages = [];
+        $messages[] = ['role' => 'system', 'content' => $role];
+        $messages[] = [
+            'role' => 'user',
+            'content' => str_replace(
+                ['[title]', '[content]'],
+                [$title, $content],
+                $settings->get('muhammedsaidckr-chatgpt.prompt')
+            )
+        ];
+
+        foreach ($discussion->posts()->where('number', '>', 1)->get() as $post) {
+            if ($post->type == 'comment') {
+                $messages[] = [
+                    'role' => $post->user_id == $userPromptId ? 'assistant' : 'user',
+                    'content' => $post->content
+                ];
+            }
+        }
+
+        // log the messages
+        resolve('log')->info('Messages', $messages);
+
+        // answer to the post
+        $response = $this->client->chat()->create(
+            [
+                'model' => $this->model,
+                'messages' => $messages,
+                'max_tokens' => $this->maxTokens
+            ]
+        );
+
+        if (empty($response->choices)) {
+            return;
+        }
+
+        $choice = Arr::first($response->choices);
+        $respond = $choice->message->content;
+
+        if (empty($respond)) {
+            return;
+        }
+
+        CommentPost::reply(
+            discussionId: $discussion->id,
+            content: $respond,
+            userId: $userPromptId,
+            ipAddress: '127.0.0.1'
+        )->save();
     }
 
 }

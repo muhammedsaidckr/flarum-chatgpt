@@ -22,7 +22,6 @@ class ClientProvider extends AbstractServiceProvider
         $settings = $this->container->make(SettingsRepositoryInterface::class);
 
         $apiKey = $settings->get('muhammedsaidckr-chatgpt.api_key');
-        $organisation = $settings->get('muhammedsaidckr-chatgpt.openai-api-organisation');
 
         if ($apiKey) {
             $this->container->singleton(Client::class, fn() => OpenAI::client($apiKey));
@@ -53,8 +52,6 @@ class ClientProvider extends AbstractServiceProvider
             model: $settings->get('muhammedsaidckr-chatgpt.model'),
             maxTokens: $settings->get('muhammedsaidckr-chatgpt.max_tokens'),
         );
-
-//        $agent->toggleMentioning($extensions->isEnabled('flarum-mentions'));
 
         return $agent;
     }

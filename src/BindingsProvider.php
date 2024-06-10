@@ -18,7 +18,5 @@ class BindingsProvider extends AbstractServiceProvider
     {
         Action::setEventDispatcher($this->container->make(Dispatcher::class));
         Action::setAgent($this->container->make(Agent::class));
-
-//        Factory::setAgent($this->container->make(Agent::class));
     }
 }
