@@ -25,6 +25,10 @@ muhammedsaidckr-chatgpt:
       answer_duration_help: Answer duration in minutes. Default is 5 minutes.
       enable_on_reply_label: Enable on reply
       enable_on_reply_help: Enable on reply if there is no answer
+      continue_to_reply_label: Continue to reply
+      continue_to_reply_help: Continue to reply if there is an answer
+      continue_to_reply_count_label: Continue to reply count
+      continue_to_reply_count_help: How many times the bot will continue to reply. Default is 5.
 
     permissions:
       use_chatgpt_assistant_label: Use ChatGPT Assistant

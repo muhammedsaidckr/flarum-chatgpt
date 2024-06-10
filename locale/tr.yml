@@ -25,6 +25,10 @@ muhammedsaidckr-chatgpt:
       answer_duration_help: Cevap verme süresi dakika cinsinden. Varsayılan 5 dakika.
       enable_on_reply_label: Yanıt yoksa gönderiye yanıt ver
       enable_on_reply_help: Yanıt yoksa gönderiye yanıt ver
+      continue_to_reply_label: Yanıt vermeye devam et
+      continue_to_reply_help: Yanıt varsa yanıt vermeye devam et
+      continue_to_reply_count_label: Yanıt vermeye devam etme sayısı
+      continue_to_reply_count_help: Botun kaç kez yanıt vermeye devam edeceği. Varsayılan 5'tir.
 
     permissions:
       use_chatgpt_assistant_label: Use ChatGPT Assistant

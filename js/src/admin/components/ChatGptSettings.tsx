@@ -80,7 +80,6 @@ export default class ChatGptSettings extends ExtensionPage {
               type: 'number',
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.answer_duration_label'),
             })}
-            {/*If any user replied to post, the AI will not reply to that post setting*/}
             {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.enable_on_reply',
               type: 'boolean',
@@ -91,6 +90,18 @@ export default class ChatGptSettings extends ExtensionPage {
               type: 'boolean',
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.enable_on_discussion_started_label'),
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.enable_on_discussion_started_help'),
+            })}
+            {this.buildSettingComponent({
+              setting: 'muhammedsaidckr-chatgpt.continue_to_reply',
+              type: 'boolean',
+              label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.continue_to_reply_label'),
+              help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.continue_to_reply_help'),
+            })}
+            {this.buildSettingComponent({
+              setting: 'muhammedsaidckr-chatgpt.continue_to_reply_count',
+              type: 'number',
+              label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.continue_to_reply_count_label'),
+              help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.continue_to_reply_count_help'),
             })}
             {this.buildSettingComponent({
               type: 'flarum-tags.select-tags',
