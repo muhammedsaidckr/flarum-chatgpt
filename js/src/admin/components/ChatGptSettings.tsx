@@ -1,6 +1,11 @@
 import app from "flarum/admin/app";
 import ExtensionPage, {ExtensionPageAttrs} from 'flarum/admin/components/ExtensionPage';
 
+const modelsData = require('../../../models.json');
+const models = modelsData.data.reduce((acc, model) => {
+  acc[model.id] = model.id;
+  return acc;
+}, {});
 export default class ChatGptSettings extends ExtensionPage {
   oninit(vnode) {
     super.oninit(vnode);
@@ -24,16 +29,7 @@ export default class ChatGptSettings extends ExtensionPage {
             {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.model',
               type: 'dropdown',
-              options: {
-                'gpt-4-turbo': 'gpt-4-turbo',
-                'gpt-4-turbo-2024-04-09': 'gpt-4-turbo-2024-04-09',
-                'gpt-4': 'gpt-4',
-                'gpt-4o': 'gpt-4o',
-                'gpt-4-instruct': 'gpt-4-instruct',
-                'gpt-3.5-turbo-0125': 'gpt-3.5-turbo-0125',
-                'gpt-3.5-turbo': 'gpt-3.5-turbo',
-                'gpt-3.5-turbo-instruct': 'gpt-3.5-turbo-instruct',
-              },
+              options: models,
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.model_label'),
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.model_help', {
                 a: <a href="https://platform.openai.com/docs/models/overview" target="_blank" rel="noopener"/>,
@@ -74,7 +70,13 @@ export default class ChatGptSettings extends ExtensionPage {
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.user_prompt_badge_label'),
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.user_prompt_badge_help'),
             })}
-            {/* new setting for answer duration in minutes (default 5) */}
+            {/*new setting for queue_active */}
+            {this.buildSettingComponent({
+              setting: 'muhammedsaidckr-chatgpt.queue_active',
+              type: 'boolean',
+              label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.queue_active_label'),
+              help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.queue_active_help'),
+            })}
             {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.answer_duration',
               type: 'number',
