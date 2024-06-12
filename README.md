@@ -30,11 +30,6 @@ If you set Answer Duration (Cevap Verme Suresi) value to greater than 0 then, se
 ![Settings](https://i.ibb.co/vmNrHPW/Screenshot-from-2024-06-11-16-27-22.png)
 
 
-## References (demo)
-- [Ne Istersen Sor](https://neistersensor.com/)
-
-
-
 ## Links
 
 - [Packagist](https://packagist.org/packages/muhammedsaidckr/flarum-chatgpt)
