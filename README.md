@@ -20,6 +20,16 @@ php flarum migrate
 php flarum cache:clear
 ```
 
+## Settings 
+
+[//]: # (PUT IMAGE URLS https://ibb.co/XDvYrvj, https://ibb.co/Np0ksjq)
+![Settings](https://i.ibb.co/xYRFtRX/Screenshot-from-2024-06-11-16-28-39.png)
+
+If you set Answer Duration (Cevap Verme Suresi) value to greater than 0 then, set the database queue extension retry count (Yeniden denemeler) to 5 or greater.  
+
+![Settings](https://i.ibb.co/vmNrHPW/Screenshot-from-2024-06-11-16-27-22.png)
+
+
 ## References (demo)
 - [Ne Istersen Sor](https://neistersensor.com/)
 
