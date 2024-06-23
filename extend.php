@@ -11,20 +11,35 @@
 
 namespace Msc\ChatGPT;
 
+use Flarum\Discussion\Event\Saving;
 use Flarum\Discussion\Event\Started;
 use Flarum\Extend;
+use Flarum\Http\Middleware\HandleErrors;
 use Flarum\Post\Event\Posted;
 use Msc\ChatGPT\Listener\ReplyToCommentPost;
 use Msc\ChatGPT\Listener\ReplyToPost;
+use Msc\ChatGPT\Listener\SavingPost;
+use Msc\ChatGPT\Middleware\ModerationMiddleware;
+use Tobscure\JsonApi\ErrorHandler;
 
 return [
+    (new Extend\Middleware('api'))
+        ->add(ModerationMiddleware::class),
+    (new Extend\Middleware('forum'))
+        ->add(ModerationMiddleware::class),
+    (new Extend\Middleware('admin'))
+        ->add(ModerationMiddleware::class),
+
+    (new Extend\Middleware('frontend'))
+        ->insertBefore(HandleErrors::class, ModerationMiddleware::class),
+
     (new Extend\Frontend('forum'))
-        ->js(__DIR__.'/js/dist/forum.js')
-        ->css(__DIR__.'/less/forum.less'),
+        ->js(__DIR__ . '/js/dist/forum.js')
+        ->css(__DIR__ . '/less/forum.less'),
     (new Extend\Frontend('admin'))
-        ->js(__DIR__.'/js/dist/admin.js')
-        ->css(__DIR__.'/less/admin.less'),
-    (new Extend\Locales(__DIR__.'/locale')),
+        ->js(__DIR__ . '/js/dist/admin.js')
+        ->css(__DIR__ . '/less/admin.less'),
+    (new Extend\Locales(__DIR__ . '/locale')),
 
     (new Extend\ServiceProvider())
         ->register(BindingsProvider::class)
@@ -34,6 +49,8 @@ return [
         ->listen(Started::class, ReplyToPost::class),
     (new Extend\Event())
         ->listen(Posted::class, ReplyToCommentPost::class),
+//    (new Extend\Event())
+//        ->listen(Saving::class, SavingPost::class),
 
     (new Extend\Settings())
         ->default('muhammedsaidckr-chatgpt.model', 'gpt-3.5-turbo-instruct')

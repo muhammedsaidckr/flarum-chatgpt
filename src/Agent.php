@@ -116,6 +116,28 @@ class Agent
         ];
     }
 
+    public function checkModeration(string $title, string $content): bool
+    {
+        // check if the title or post content includes bad words
+        // if it includes bad words, do not reply and give error message
+        // if it does not include bad words, continue to reply
+        $response = $this->client->moderations()->create([
+            'input' => $content
+        ]);
+
+        $results = Arr::first($response->results);
+
+
+        resolve('log')->info($results->flagged);
+
+        if (empty($results->flagged)) {
+            return true;
+        }
+
+        return $results->flagged;
+    }
+
+
     private function sendCompletionRequest(array $messages)
     {
         return $this->client->chat()->create(
