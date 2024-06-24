@@ -31,6 +31,8 @@ muhammedsaidckr-chatgpt:
       queue_active_help: Kuyruk aktif hale getirildiğinde, botun yanıt vermesi için kuyruğa eklenir.
       enabled_tags_label: Aktif Etiketler
       enabled_tags_help: Yanıt oluşturmak için kullanılacak etiketleri seçin.
+      moderation_label: Moderasyon
+      moderation_help: Eğer moderasyon etkinse, kullanıcı uygunsuz içerik içeren bir tartışma veya yanıt oluşturamaz.
 
     permissions:
       use_chatgpt_assistant_label: Use ChatGPT Assistant

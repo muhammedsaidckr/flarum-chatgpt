@@ -31,6 +31,8 @@ muhammedsaidckr-chatgpt:
       continue_to_reply_count_help: How many times the bot will continue to reply. Default is 5.
       queue_active_label: Queue Active
       queue_active_help: When the queue is activated, the bot is added to the queue to respond.
+      moderation_label: Moderation
+      moderation_help: If moderation is enabled, the user cannot create a discussion or reply if it is contains inappropriate content.
 
     permissions:
       use_chatgpt_assistant_label: Use ChatGPT Assistant

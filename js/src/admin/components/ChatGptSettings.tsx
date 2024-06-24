@@ -44,6 +44,13 @@ export default class ChatGptSettings extends ExtensionPage {
               }),
               default: 100,
             })}
+            {/* new setting for moderation */}
+            {this.buildSettingComponent({
+              setting: 'muhammedsaidckr-chatgpt.moderation',
+              type: 'boolean',
+              label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.moderation_label'),
+              help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.moderation_help'),
+            })}
             {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.user_prompt',
               type: 'text',
