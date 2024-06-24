@@ -23,6 +23,14 @@ class ModerationMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        // TODO: Apply it to the discussion route only
+        // ony apply to the discussion route
+        $uri = new Uri($request->getUri());
+        $path = $uri->getPath();
+        if ($path !== '/discussions') {
+            return $handler->handle($request);
+        }
+
         if ($request->getMethod() === 'POST') {
             $title = $request->getParsedBody()['data']['attributes']['title'];
             $firstPost = $request->getParsedBody()['data']['attributes']['content'];

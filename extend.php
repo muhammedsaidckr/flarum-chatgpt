@@ -59,7 +59,7 @@ return [
         ->default('muhammedsaidckr-chatgpt.user_prompt_badge_text', 'Assistant')
         ->default('muhammedsaidckr-chatgpt.queue_active', true)
         // new setting for answer duration in minutes (default 5)
-        ->default('muhammedsaidckr-chatgpt.answer_duration', 5)
+        ->default('muhammedsaidckr-chatgpt.answer_duration', 0)
         // If any user replied to post, the AI will not reply to that post setting
         ->default('muhammedsaidckr-chatgpt.reply_to_post', true)
         ->default('muhammedsaidckr-chatgpt.role', 'You are a forum user')
