@@ -8,8 +8,7 @@
     "license": "MIT",
     "require": {
         "flarum/core": "^1.2.0",
-        "openai-php/client": "^0.8.0",
-        "blomstra/database-queue": "^1.0.0"
+        "openai-php/client": "^0.8.0"
     },
     "authors": [
         {

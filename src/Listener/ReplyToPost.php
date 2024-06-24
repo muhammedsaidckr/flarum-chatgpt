@@ -31,6 +31,8 @@ class ReplyToPost
             return;
         }
 
+        // check queue redis, or database queue is installed
+
         $this->queue->push(new ReplyJob($event->discussion));
     }
 }

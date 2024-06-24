@@ -122,19 +122,17 @@ class Agent
         // if it includes bad words, do not reply and give error message
         // if it does not include bad words, continue to reply
         $response = $this->client->moderations()->create([
-            'input' => $content
+            'input' => $title . ' ' . $content
         ]);
 
         $results = Arr::first($response->results);
 
-
+        // convert results to array
+        $res = json_decode(json_encode($results), true);
+        resolve('log')->info('Results', $res);
         resolve('log')->info($results->flagged);
 
-        if (empty($results->flagged)) {
-            return true;
-        }
-
-        return $results->flagged;
+        return !!$results->flagged;
     }
 
 

@@ -18,7 +18,6 @@ use Flarum\Http\Middleware\HandleErrors;
 use Flarum\Post\Event\Posted;
 use Msc\ChatGPT\Listener\ReplyToCommentPost;
 use Msc\ChatGPT\Listener\ReplyToPost;
-use Msc\ChatGPT\Listener\SavingPost;
 use Msc\ChatGPT\Middleware\ModerationMiddleware;
 use Tobscure\JsonApi\ErrorHandler;
 
@@ -67,6 +66,7 @@ return [
             'Write a arguable or thankfully opinion asking or arguing something about an answer that has talked about "[title]" and who talked about [content]. Don\'t talk about what you would like or don\'t like. Speak in a close tone, like you are writing in a Tech Forum. Be random and unpredictable. Answer in [language].')
         ->default('muhammedsaidckr-chatgpt.continue_to_reply', true)
         ->default('muhammedsaidckr-chatgpt.continue_to_reply_count', 5)
+        ->default('muhammedsaidckr-chatgpt.moderation', false)
         ->serializeToForum('chatGptUserPromptId', 'muhammedsaidckr-chatgpt.user_prompt')
         ->serializeToForum('chatGptBadgeText', 'muhammedsaidckr-chatgpt.user_prompt_badge_text'),
 ];

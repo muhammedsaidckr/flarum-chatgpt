@@ -4,6 +4,7 @@ namespace Msc\ChatGPT\Middleware;
 
 use Flarum\Api\JsonApiResponse;
 use Flarum\Http\UrlGenerator;
+use Flarum\Settings\SettingsRepositoryInterface;
 use Laminas\Diactoros\Uri;
 use Msc\ChatGPT\Agent;
 use Psr\Http\Message\ResponseInterface;
@@ -23,19 +24,27 @@ class ModerationMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // TODO: Apply it to the discussion route only
-        // ony apply to the discussion route
-        $uri = new Uri($request->getUri());
-        $path = $uri->getPath();
-        if ($path !== '/discussions') {
+        // check moderation enabled in settings
+        $isModerationEnabled = resolve(SettingsRepositoryInterface::class)->get('muhammedsaidckr-chatgpt.moderation');
+
+        if (!$isModerationEnabled) {
             return $handler->handle($request);
         }
 
-        if ($request->getMethod() === 'POST') {
-            $title = $request->getParsedBody()['data']['attributes']['title'];
-            $firstPost = $request->getParsedBody()['data']['attributes']['content'];
+        $uri = new Uri($request->getUri());
+        $path = $uri->getPath();
 
-            if ($this->agent->checkModeration($title, $firstPost)) {
+        if ($request->getMethod() === 'POST' && ($path === '/discussions' || $path === '/posts')) {
+            $title = '';
+
+            if (isset($request->getParsedBody()['data']['attributes']['title'])) {
+                $title = $request->getParsedBody()['data']['attributes']['title'];
+            }
+
+            $firstPost = $request->getParsedBody()['data']['attributes']['content'];
+            $flag = $this->agent->checkModeration($title, $firstPost);
+            resolve('log')->info($flag);
+            if ($flag) {
                 $error = new ResponseBag('422', [
                     [
                         'status' => '422',
