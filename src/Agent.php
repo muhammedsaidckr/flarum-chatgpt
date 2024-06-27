@@ -4,11 +4,9 @@ namespace Msc\ChatGPT;
 
 use Flarum\Discussion\Discussion;
 use Flarum\Post\CommentPost;
-use Flarum\Post\Post;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\User;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 use OpenAI;
 use OpenAI\Client;
 
@@ -81,7 +79,7 @@ class Agent
         }
 
         // add the last message with the prompt
-        $messages[] = $this->createMessageForUserWithPrompt($title, $commentPost->content, $prompt);
+        $messages[] = $this->createMessageForUserWithoutPrompt($commentPost->content);
 
         // answer to the post
         $response = $this->sendCompletionRequest($messages);
@@ -129,8 +127,6 @@ class Agent
 
         // convert results to array
         $res = json_decode(json_encode($results), true);
-        resolve('log')->info('Results', $res);
-        resolve('log')->info($results->flagged);
 
         return !!$results->flagged;
     }
@@ -191,6 +187,14 @@ class Agent
                 [$title, $content],
                 $prompt
             )
+        ];
+    }
+
+    private function createMessageForUserWithoutPrompt($content): array
+    {
+        return [
+            'role' => 'user',
+            'content' => $content
         ];
     }
 
