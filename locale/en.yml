@@ -16,7 +16,7 @@ muhammedsaidckr-chatgpt:
       role_label: Role
       role_help: Select the role that will be used to generate the answer.
       prompt_label: Prompt
-      prompt_help: Enter the prompt that will be used to generate the answer. [title] and [content] variables should be kept constant.
+      prompt_help: Enter the prompt that will be used to generate the answer. [title] variable should be kept constant.
       enable_on_discussion_started_label: Enable on discussion started
       enable_on_discussion_started_help: The discussion will receive an answer based on content of first post when the discussion is started.
       enabled_tags_label: Enabled Tags

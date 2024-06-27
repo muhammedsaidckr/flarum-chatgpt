@@ -16,7 +16,7 @@ muhammedsaidckr-chatgpt:
       role_label: Rol
       role_help: Yanıtı oluşturmak için kullanılacak rolü giriniz.
       prompt_label: İstek
-      prompt_help: Yanıtı oluşturmak için kullanılacak isteği girin. [title] ve [content] değişkenlerini sabit bırakınız.
+      prompt_help: Yanıtı oluşturmak için kullanılacak isteği girin. [title] değişkenini sabit bırakınız.
       enable_on_discussion_started_label: Tartışma başlatıldığında etkinleştir
       enable_on_discussion_started_help: Tartışma başlatıldığında, tartışmanın içeriğine dayalı bir yanıt alır.
       answer_duration_label: Cevap Verme Süresi

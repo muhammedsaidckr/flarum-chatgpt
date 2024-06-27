@@ -79,7 +79,7 @@ class Agent
         }
 
         // add the last message with the prompt
-        $messages[] = $this->createMessageForUserWithoutPrompt($commentPost->content);
+        $messages[] = $this->createMessageForUser($commentPost->content);
 
         // answer to the post
         $response = $this->sendCompletionRequest($messages);
@@ -173,24 +173,26 @@ class Agent
     private function createMessages($title, $content, $role, $prompt): array
     {
         return [
-            ['role' => 'system', 'content' => $role],
-            $this->createMessageForUserWithPrompt($title, $content, $prompt)
+            $this->createMessageForSystem($role, $prompt, $title),
+            $this->createMessageForUser($content)
         ];
     }
 
-    private function createMessageForUserWithPrompt($title, $content, $prompt): array
+    private function createMessageForSystem($role, $prompt, $title): array
     {
+        $prompt = str_replace(
+            ['[title]', '[content]'],
+            [$title, ''],
+            $prompt
+        );
+        $systemPrompt = $role . ' ' . $prompt;
         return [
-            'role' => 'user',
-            'content' => str_replace(
-                ['[title]', '[content]'],
-                [$title, $content],
-                $prompt
-            )
+            'role' => 'system',
+            'content' => $systemPrompt
         ];
     }
 
-    private function createMessageForUserWithoutPrompt($content): array
+    private function createMessageForUser($content): array
     {
         return [
             'role' => 'user',
