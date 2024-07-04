@@ -5,6 +5,7 @@ namespace Msc\ChatGPT\Listener;
 use Flarum\Post\Event\Posted;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Contracts\Queue\Queue;
+use Illuminate\Support\Arr;
 use Msc\ChatGPT\Agent;
 use Msc\ChatGPT\Job\ReplyPostJob;
 
@@ -24,7 +25,21 @@ class ReplyToCommentPost
     public function handle(Posted $event): void
     {
         $settings = resolve(SettingsRepositoryInterface::class);
+        $enabledTagIds = $settings->get('muhammedsaidckr-chatgpt.enabled-tags', []);
         $enabled = $settings->get('muhammedsaidckr-chatgpt.queue_active');
+        $actor = $event->actor;
+
+        if ($enabledTagIds = json_decode($enabledTagIds, true)) {
+            $discussion = $event->post->discussion;
+            $tagIds = Arr::pluck($discussion->tags, 'id');
+
+            if (!array_intersect($enabledTagIds, $tagIds)) {
+                return;
+            }
+        }
+
+        $actor->assertCan('discussion.useChatGPTAssistant', $discussion);
+
 
         if (!$enabled) {
             $this->agent->repliesToCommentPost($event->post);
