@@ -38,8 +38,9 @@ class ReplyToCommentPost
             }
         }
 
-        $actor->assertCan('discussion.useChatGPTAssistant', $discussion);
-
+        if($actor->can('discussion.useChatGPTAssistant', $discussion) === false) {
+            return;
+        }
 
         if (!$enabled) {
             $this->agent->repliesToCommentPost($event->post);
