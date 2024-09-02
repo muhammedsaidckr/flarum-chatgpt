@@ -27,6 +27,13 @@ export default class ChatGptSettings extends ExtensionPage {
               placeholder: 'sk-...',
             })}
             {this.buildSettingComponent({
+              setting: 'muhammedsaidckr-chatgpt.base_uri',
+              type: 'text',
+              label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.base_uri_label'),
+              help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.base_uri_help'),
+              placeholder: 'api.openai.com',
+            })}
+            {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.model',
               type: 'dropdown',
               options: models,

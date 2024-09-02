@@ -67,6 +67,7 @@ return [
         ->default('muhammedsaidckr-chatgpt.continue_to_reply', true)
         ->default('muhammedsaidckr-chatgpt.continue_to_reply_count', 5)
         ->default('muhammedsaidckr-chatgpt.moderation', false)
+        ->default('muhammedsaidckr-chatgpt.base_uri', 'https://api.openai.com/v1/')
         ->serializeToForum('chatGptUserPromptId', 'muhammedsaidckr-chatgpt.user_prompt')
         ->serializeToForum('chatGptBadgeText', 'muhammedsaidckr-chatgpt.user_prompt_badge_text'),
 ];

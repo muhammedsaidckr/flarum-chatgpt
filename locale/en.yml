@@ -5,6 +5,8 @@ muhammedsaidckr-chatgpt:
     settings:
       api_key_label: API Key
       api_key_help: Get the OpenAI API key from <a>openai.com</a>.
+      base_uri_label: Base URI
+      base_uri_help: The base URI of the OpenAI API. Default is <code>https://api.openai.com/v1</code>.
       model_label: Model
       model_help: "Learn more about <a>models</a> (default: <code>text-davinci-003</code>)."
       max_tokens_label: Max Tokens

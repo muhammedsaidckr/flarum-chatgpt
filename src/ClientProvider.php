@@ -24,7 +24,7 @@ class ClientProvider extends AbstractServiceProvider
         $apiKey = $settings->get('muhammedsaidckr-chatgpt.api_key');
 
         if ($apiKey) {
-            $this->container->singleton(Client::class, fn() => OpenAI::client($apiKey));
+            $this->container->singleton(Client::class, fn() => $this->getClient($settings));
         }
 
         /** @var ExtensionManager $extensions */
@@ -54,6 +54,18 @@ class ClientProvider extends AbstractServiceProvider
         );
 
         return $agent;
+    }
+
+    protected function getClient(SettingsRepositoryInterface $settings)
+    {
+        $apiKey = $settings->get('muhammedsaidckr-chatgpt.api_key');
+
+        $baseUri = $settings->get('muhammedsaidckr-chatgpt.base_uri');
+
+        return OpenAI::factory()
+            ->withApiKey($apiKey)
+            ->withBaseUri($baseUri)
+            ->make();
     }
 
 }

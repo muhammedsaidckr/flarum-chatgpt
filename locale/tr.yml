@@ -5,6 +5,8 @@ muhammedsaidckr-chatgpt:
     settings:
       api_key_label: API Key
       api_key_help: Open API key üretmek için <a>openai.com</a>.
+      base_uri_label: Base URI
+      base_uri_help: OpenAI API'nin temel URI'si. Varsayılan <code>https://api.openai.com/v1</code>.
       model_label: Model
       model_help: "Daha fazla bilgi almak için <a>modeller</a> (varsayılan: <code>gpt-3.5-turbo-instruct</code>)."
       max_tokens_label: En fazla kullanılabilecek jeton sayısı
