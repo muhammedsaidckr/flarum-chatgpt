@@ -2,6 +2,9 @@ name: ChatGPT JS
 
 on: [workflow_dispatch, push, pull_request]
 
+permissions:
+  contents: write
+
 jobs:
   run:
     uses: flarum/framework/.github/workflows/REUSABLE_frontend.yml@main
