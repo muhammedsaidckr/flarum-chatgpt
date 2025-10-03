@@ -17,7 +17,11 @@ const FALLBACK_MODELS = [
 ];
 
 export default class ChatGptSettings extends ExtensionPage {
-  oninit(vnode) {
+  loading!: boolean;
+  isFetchingModels!: boolean;
+  models!: Record<string, string>;
+
+  oninit(vnode: any) {
     super.oninit(vnode);
     this.loading = false;
     this.isFetchingModels = false;
@@ -51,7 +55,7 @@ export default class ChatGptSettings extends ExtensionPage {
     this.isFetchingModels = true;
 
     app
-      .request({
+      .request<{ models: any[]; count: number; last_fetched: number }>({
         method: 'POST',
         url: app.forum.attribute('apiUrl') + '/chatgpt/fetch-models',
       })
