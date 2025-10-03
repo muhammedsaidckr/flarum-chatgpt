@@ -41,11 +41,11 @@ class ClientProvider extends AbstractServiceProvider
         $users = $this->container->make(UserRepository::class);
 
         // Try to find the configured user, fall back to admin (ID 1)
-        $user = $users->find($userId);
+        $user = $users->query()->find($userId);
 
         // If configured user doesn't exist, try to find admin user
         if (!$user && $userId != 1) {
-            $user = $users->find(1);
+            $user = $users->query()->find(1);
         }
 
         // If still no user found, throw a helpful error
