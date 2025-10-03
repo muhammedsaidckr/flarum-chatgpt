@@ -48,7 +48,7 @@ export default class ChatGptSettings extends ExtensionPage {
     return FALLBACK_MODELS.reduce((acc, modelId) => {
       acc[modelId] = modelId;
       return acc;
-    }, {});
+    }, {} as Record<string, string>);
   }
 
   fetchModels() {
@@ -65,7 +65,7 @@ export default class ChatGptSettings extends ExtensionPage {
 
           // Update cached models in settings
           app.data.settings['muhammedsaidckr-chatgpt.cached_models'] = JSON.stringify(response.models);
-          app.data.settings['muhammedsaidckr-chatgpt.models_last_fetched'] = response.last_fetched;
+          app.data.settings['muhammedsaidckr-chatgpt.models_last_fetched'] = response.last_fetched.toString();
 
           // Refresh models list
           this.models = this.getModels();

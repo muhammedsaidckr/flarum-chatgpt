@@ -3,7 +3,7 @@ import { extend } from 'flarum/common/extend';
 import PostUser from 'flarum/forum/components/PostUser';
 
 app.initializers.add('muhammedsaidckr-chatgpt', () => {
-  extend(PostUser.prototype, 'view', function (view: any) {
+  extend(PostUser.prototype, 'view', function (this: any, view: any) {
     const user = this.attrs?.post?.user();
 
     if (!user || app.forum.attribute('chatGptUserPromptId') !== user.id()) return;
