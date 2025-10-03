@@ -1,5 +1,5 @@
-import app from "flarum/admin/app";
-import ExtensionPage, {ExtensionPageAttrs} from 'flarum/admin/components/ExtensionPage';
+import app from 'flarum/admin/app';
+import ExtensionPage, { ExtensionPageAttrs } from 'flarum/admin/components/ExtensionPage';
 import Button from 'flarum/common/components/Button';
 
 // Fallback models in case cached models are not available
@@ -13,7 +13,7 @@ const FALLBACK_MODELS = [
   'gpt-3.5-turbo-instruct',
   'o1-preview',
   'o1-mini',
-  'chatgpt-4o-latest'
+  'chatgpt-4o-latest',
 ];
 
 export default class ChatGptSettings extends ExtensionPage {
@@ -50,38 +50,46 @@ export default class ChatGptSettings extends ExtensionPage {
   fetchModels() {
     this.isFetchingModels = true;
 
-    app.request({
-      method: 'POST',
-      url: app.forum.attribute('apiUrl') + '/chatgpt/fetch-models',
-    }).then(
-      (response) => {
-        this.isFetchingModels = false;
+    app
+      .request({
+        method: 'POST',
+        url: app.forum.attribute('apiUrl') + '/chatgpt/fetch-models',
+      })
+      .then(
+        (response) => {
+          this.isFetchingModels = false;
 
-        // Update cached models in settings
-        app.data.settings['muhammedsaidckr-chatgpt.cached_models'] = JSON.stringify(response.models);
-        app.data.settings['muhammedsaidckr-chatgpt.models_last_fetched'] = response.last_fetched;
+          // Update cached models in settings
+          app.data.settings['muhammedsaidckr-chatgpt.cached_models'] = JSON.stringify(response.models);
+          app.data.settings['muhammedsaidckr-chatgpt.models_last_fetched'] = response.last_fetched;
 
-        // Refresh models list
-        this.models = this.getModels();
+          // Refresh models list
+          this.models = this.getModels();
 
-        app.alerts.show({
-          type: 'success'
-        }, app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.models_fetched_success', {
-          count: response.count
-        }));
+          app.alerts.show(
+            {
+              type: 'success',
+            },
+            app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.models_fetched_success', {
+              count: response.count,
+            })
+          );
 
-        m.redraw();
-      },
-      (error) => {
-        this.isFetchingModels = false;
+          m.redraw();
+        },
+        (error) => {
+          this.isFetchingModels = false;
 
-        app.alerts.show({
-          type: 'error'
-        }, app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.fetch_models_error'));
+          app.alerts.show(
+            {
+              type: 'error',
+            },
+            app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.fetch_models_error')
+          );
 
-        m.redraw();
-      }
-    );
+          m.redraw();
+        }
+      );
   }
 
   getLastFetchedText() {
@@ -93,7 +101,7 @@ export default class ChatGptSettings extends ExtensionPage {
 
     const date = new Date(timestamp * 1000);
     return app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.models_last_fetched', {
-      date: date.toLocaleString()
+      date: date.toLocaleString(),
     });
   }
 
@@ -107,7 +115,7 @@ export default class ChatGptSettings extends ExtensionPage {
               type: 'text',
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.api_key_label'),
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.api_key_help', {
-                a: <a href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener"/>,
+                a: <a href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener" />,
               }),
               placeholder: 'sk-...',
             })}
@@ -124,7 +132,7 @@ export default class ChatGptSettings extends ExtensionPage {
               options: this.models,
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.model_label'),
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.model_help', {
-                a: <a href="https://platform.openai.com/docs/models/overview" target="_blank" rel="noopener"/>,
+                a: <a href="https://platform.openai.com/docs/models/overview" target="_blank" rel="noopener" />,
               }),
             })}
             <div className="Form-group">
@@ -138,9 +146,7 @@ export default class ChatGptSettings extends ExtensionPage {
                 >
                   {app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.fetch_models_button')}
                 </Button>
-                <p className="helpText">
-                  {this.getLastFetchedText()}
-                </p>
+                <p className="helpText">{this.getLastFetchedText()}</p>
               </div>
             </div>
             {this.buildSettingComponent({
@@ -148,7 +154,7 @@ export default class ChatGptSettings extends ExtensionPage {
               type: 'number',
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.max_tokens_label'),
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.max_tokens_help', {
-                a: <a href="https://help.openai.com/en/articles/4936856" target="_blank" rel="noopener"/>,
+                a: <a href="https://help.openai.com/en/articles/4936856" target="_blank" rel="noopener" />,
               }),
               default: 100,
             })}

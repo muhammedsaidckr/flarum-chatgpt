@@ -1,5 +1,5 @@
 import app from 'flarum/admin/app';
-import ChatGptSettings from "./components/ChatGptSettings";
+import ChatGptSettings from './components/ChatGptSettings';
 
 app.initializers.add('muhammedsaidckr-chatgpt', () => {
   app.extensionData
@@ -12,5 +12,6 @@ app.initializers.add('muhammedsaidckr-chatgpt', () => {
         allowGuest: false,
       },
       'start'
-    ).registerPage(ChatGptSettings);
+    )
+    .registerPage(ChatGptSettings);
 });

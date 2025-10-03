@@ -1,6 +1,6 @@
 import app from 'flarum/forum/app';
-import {extend} from "flarum/common/extend";
-import PostUser from "flarum/forum/components/PostUser";
+import { extend } from 'flarum/common/extend';
+import PostUser from 'flarum/forum/components/PostUser';
 
 app.initializers.add('muhammedsaidckr-chatgpt', () => {
   extend(PostUser.prototype, 'view', function (view) {
@@ -13,5 +13,5 @@ app.initializers.add('muhammedsaidckr-chatgpt', () => {
         <div className="badge">{app.forum.attribute('chatGptBadgeText')}</div>
       </div>
     );
-  })
+  });
 });
