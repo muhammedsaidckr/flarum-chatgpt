@@ -39,7 +39,23 @@ class ClientProvider extends AbstractServiceProvider
 
         /** @var \Flarum\User\UserRepository $users */
         $users = $this->container->make(UserRepository::class);
-        $user = $users->findOrFail($userId);
+
+        // Try to find the configured user, fall back to admin (ID 1)
+        $user = $users->find($userId);
+
+        // If configured user doesn't exist, try to find admin user
+        if (!$user && $userId != 1) {
+            $user = $users->find(1);
+        }
+
+        // If still no user found, throw a helpful error
+        if (!$user) {
+            throw new \RuntimeException(
+                "ChatGPT extension error: Cannot find user ID {$userId}. " .
+                "Please configure a valid user ID in extension settings at 'User Prompt' field, " .
+                "or ensure at least one user exists in your forum."
+            );
+        }
 
         /** @var Client $client */
         $client = $this->container->has(Client::class)
