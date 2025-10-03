@@ -16,6 +16,7 @@ use Flarum\Discussion\Event\Started;
 use Flarum\Extend;
 use Flarum\Http\Middleware\HandleErrors;
 use Flarum\Post\Event\Posted;
+use Msc\ChatGPT\Controller\FetchModelsController;
 use Msc\ChatGPT\Listener\ReplyToCommentPost;
 use Msc\ChatGPT\Listener\ReplyToPost;
 use Msc\ChatGPT\Middleware\ModerationMiddleware;
@@ -39,6 +40,9 @@ return [
         ->js(__DIR__ . '/js/dist/admin.js')
         ->css(__DIR__ . '/less/admin.less'),
     (new Extend\Locales(__DIR__ . '/locale')),
+
+    (new Extend\Routes('api'))
+        ->post('/chatgpt/fetch-models', 'chatgpt.fetch-models', FetchModelsController::class),
 
     (new Extend\ServiceProvider())
         ->register(BindingsProvider::class)
@@ -68,6 +72,8 @@ return [
         ->default('muhammedsaidckr-chatgpt.continue_to_reply_count', 5)
         ->default('muhammedsaidckr-chatgpt.moderation', false)
         ->default('muhammedsaidckr-chatgpt.base_uri', 'https://api.openai.com/v1/')
+        ->default('muhammedsaidckr-chatgpt.cached_models', '[]')
+        ->default('muhammedsaidckr-chatgpt.models_last_fetched', 0)
         ->serializeToForum('chatGptUserPromptId', 'muhammedsaidckr-chatgpt.user_prompt')
         ->serializeToForum('chatGptBadgeText', 'muhammedsaidckr-chatgpt.user_prompt_badge_text'),
 ];

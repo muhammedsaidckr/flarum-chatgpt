@@ -35,6 +35,12 @@ muhammedsaidckr-chatgpt:
       enabled_tags_help: Yanıt oluşturmak için kullanılacak etiketleri seçin.
       moderation_label: Moderasyon
       moderation_help: Eğer moderasyon etkinse, kullanıcı uygunsuz içerik içeren bir tartışma veya yanıt oluşturamaz.
+      fetch_models_label: OpenAI Modellerini Yenile
+      fetch_models_button: OpenAI'dan Son Modelleri Al
+      models_fetched_success: "OpenAI'dan {count} model başarıyla alındı"
+      fetch_models_error: Modeller alınamadı. Lütfen API anahtarınızı ve temel URI ayarlarınızı kontrol edin.
+      models_last_fetched: "Son güncelleme: {date}"
+      models_never_fetched: Modeller hiç alınmadı. En son modelleri almak için yukarıdaki düğmeye tıklayın.
 
     permissions:
       use_chatgpt_assistant_label: Use ChatGPT Assistant

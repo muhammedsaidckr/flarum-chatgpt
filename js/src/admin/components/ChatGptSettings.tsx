@@ -1,15 +1,100 @@
 import app from "flarum/admin/app";
 import ExtensionPage, {ExtensionPageAttrs} from 'flarum/admin/components/ExtensionPage';
+import Button from 'flarum/common/components/Button';
 
-const modelsData = require('../../../models.json');
-const models = modelsData.data.reduce((acc, model) => {
-  acc[model.id] = model.id;
-  return acc;
-}, {});
+// Fallback models in case cached models are not available
+const FALLBACK_MODELS = [
+  'gpt-4.5-preview',
+  'gpt-4o',
+  'gpt-4o-mini',
+  'gpt-4-turbo',
+  'gpt-4',
+  'gpt-3.5-turbo',
+  'gpt-3.5-turbo-instruct',
+  'o1-preview',
+  'o1-mini',
+  'chatgpt-4o-latest'
+];
+
 export default class ChatGptSettings extends ExtensionPage {
   oninit(vnode) {
     super.oninit(vnode);
     this.loading = false;
+    this.isFetchingModels = false;
+    this.models = this.getModels();
+  }
+
+  getModels() {
+    try {
+      const cachedModels = app.data.settings['muhammedsaidckr-chatgpt.cached_models'];
+      if (cachedModels && cachedModels !== '[]') {
+        const parsed = JSON.parse(cachedModels);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.reduce((acc, model) => {
+            acc[model.id] = model.id;
+            return acc;
+          }, {});
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse cached models:', e);
+    }
+
+    // Return fallback models
+    return FALLBACK_MODELS.reduce((acc, modelId) => {
+      acc[modelId] = modelId;
+      return acc;
+    }, {});
+  }
+
+  fetchModels() {
+    this.isFetchingModels = true;
+
+    app.request({
+      method: 'POST',
+      url: app.forum.attribute('apiUrl') + '/chatgpt/fetch-models',
+    }).then(
+      (response) => {
+        this.isFetchingModels = false;
+
+        // Update cached models in settings
+        app.data.settings['muhammedsaidckr-chatgpt.cached_models'] = JSON.stringify(response.models);
+        app.data.settings['muhammedsaidckr-chatgpt.models_last_fetched'] = response.last_fetched;
+
+        // Refresh models list
+        this.models = this.getModels();
+
+        app.alerts.show({
+          type: 'success'
+        }, app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.models_fetched_success', {
+          count: response.count
+        }));
+
+        m.redraw();
+      },
+      (error) => {
+        this.isFetchingModels = false;
+
+        app.alerts.show({
+          type: 'error'
+        }, app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.fetch_models_error'));
+
+        m.redraw();
+      }
+    );
+  }
+
+  getLastFetchedText() {
+    const timestamp = parseInt(app.data.settings['muhammedsaidckr-chatgpt.models_last_fetched'] || '0');
+
+    if (timestamp === 0) {
+      return app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.models_never_fetched');
+    }
+
+    const date = new Date(timestamp * 1000);
+    return app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.models_last_fetched', {
+      date: date.toLocaleString()
+    });
   }
 
   content() {
@@ -36,12 +121,28 @@ export default class ChatGptSettings extends ExtensionPage {
             {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.model',
               type: 'dropdown',
-              options: models,
+              options: this.models,
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.model_label'),
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.model_help', {
                 a: <a href="https://platform.openai.com/docs/models/overview" target="_blank" rel="noopener"/>,
               }),
             })}
+            <div className="Form-group">
+              <label>{app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.fetch_models_label')}</label>
+              <div>
+                <Button
+                  className="Button Button--primary"
+                  onclick={() => this.fetchModels()}
+                  loading={this.isFetchingModels}
+                  disabled={this.isFetchingModels}
+                >
+                  {app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.fetch_models_button')}
+                </Button>
+                <p className="helpText">
+                  {this.getLastFetchedText()}
+                </p>
+              </div>
+            </div>
             {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.max_tokens',
               type: 'number',

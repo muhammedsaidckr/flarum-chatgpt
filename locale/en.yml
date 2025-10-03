@@ -35,6 +35,12 @@ muhammedsaidckr-chatgpt:
       queue_active_help: When the queue is activated, the bot is added to the queue to respond.
       moderation_label: Moderation
       moderation_help: If moderation is enabled, the user cannot create a discussion or reply if it is contains inappropriate content.
+      fetch_models_label: Refresh OpenAI Models
+      fetch_models_button: Fetch Latest Models from OpenAI
+      models_fetched_success: "Successfully fetched {count} models from OpenAI"
+      fetch_models_error: Failed to fetch models. Please check your API key and base URI settings.
+      models_last_fetched: "Last updated: {date}"
+      models_never_fetched: Models have never been fetched. Click the button above to fetch the latest models.
 
     permissions:
       use_chatgpt_assistant_label: Use ChatGPT Assistant
