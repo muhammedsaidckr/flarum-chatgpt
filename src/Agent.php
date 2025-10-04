@@ -29,66 +29,162 @@ class Agent
 
     public function repliesTo(Discussion $discussion): void
     {
-        $content = $discussion->firstPost->content;
-        $title = $discussion->title;
+        $log = resolve('log');
 
-        ['role' => $role, 'prompt' => $prompt] = $this->prepareChatForMessage();
+        try {
+            $log->info('[ChatGPT] Starting repliesTo for discussion', [
+                'discussion_id' => $discussion->id,
+                'title' => $discussion->title,
+                'model' => $this->model,
+                'max_tokens' => $this->maxTokens,
+                'is_reasoning_model' => $this->isReasoningModel()
+            ]);
 
-        $messages = $this->createMessages($title, $content, $role, $prompt);
+            $content = $discussion->firstPost->content;
+            $title = $discussion->title;
 
-        $response = $this->sendCompletionRequest($messages);
+            ['role' => $role, 'prompt' => $prompt] = $this->prepareChatForMessage();
 
-        if (empty($response->choices)) {
-            return;
+            $messages = $this->createMessages($title, $content, $role, $prompt);
+
+            $log->info('[ChatGPT] Sending request to OpenAI', [
+                'model' => $this->model,
+                'message_count' => count($messages),
+                'token_param' => $this->isReasoningModel() ? 'max_completion_tokens' : 'max_tokens'
+            ]);
+
+            $response = $this->sendCompletionRequest($messages);
+
+            if (empty($response->choices)) {
+                $log->warning('[ChatGPT] Empty response from OpenAI', [
+                    'discussion_id' => $discussion->id,
+                    'model' => $this->model
+                ]);
+                return;
+            }
+
+            $log->info('[ChatGPT] Received response from OpenAI', [
+                'discussion_id' => $discussion->id,
+                'choices_count' => count($response->choices)
+            ]);
+
+            $saved = $this->saveResponse($response, $discussion->id);
+
+            if ($saved) {
+                $log->info('[ChatGPT] Successfully saved response', [
+                    'discussion_id' => $discussion->id
+                ]);
+            } else {
+                $log->error('[ChatGPT] Failed to save response', [
+                    'discussion_id' => $discussion->id
+                ]);
+            }
+        } catch (\Exception $e) {
+            $log->error('[ChatGPT] Exception in repliesTo', [
+                'discussion_id' => $discussion->id,
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
-
-        $this->saveResponse($response, $discussion->id);
     }
 
     public function repliesToCommentPost(CommentPost $commentPost): void
     {
-        // get the discussion title
-        $discussion = $commentPost->discussion;
-        $title = $discussion->title;
-        $content = $discussion->firstPost->content;
+        $log = resolve('log');
 
-        if (!$this->checkIfAssistantCanReplyToPost($commentPost)) {
-            return;
-        }
+        try {
+            // get the discussion title
+            $discussion = $commentPost->discussion;
+            $title = $discussion->title;
+            $content = $discussion->firstPost->content;
 
-        ['role' => $role, 'prompt' => $prompt] = $this->prepareChatForMessage();
+            $log->info('[ChatGPT] Starting repliesToCommentPost', [
+                'discussion_id' => $discussion->id,
+                'post_id' => $commentPost->id,
+                'post_number' => $commentPost->number,
+                'model' => $this->model,
+                'is_reasoning_model' => $this->isReasoningModel()
+            ]);
 
-        $messages = $this->createMessages($title, $content, $role, $prompt);
-
-        $settings = resolve(SettingsRepositoryInterface::class);
-        $userPromptId = $settings->get('muhammedsaidckr-chatgpt.user_prompt');
-
-        // get the posts where the number is greater than 1 to the last message not include last message
-        $posts = $discussion->posts()
-            ->where('number', '>', 1)
-            ->where('number', '<', $commentPost->number)
-            ->get();
-
-        foreach ($posts as $post) {
-            if ($post->type == 'comment') {
-                $messages[] = [
-                    'role' => $post->user_id == $userPromptId ? 'assistant' : 'user',
-                    'content' => $post->content
-                ];
+            if (!$this->checkIfAssistantCanReplyToPost($commentPost)) {
+                $log->info('[ChatGPT] Assistant cannot reply to this post', [
+                    'post_id' => $commentPost->id,
+                    'reason' => 'checkIfAssistantCanReplyToPost returned false'
+                ]);
+                return;
             }
+
+            ['role' => $role, 'prompt' => $prompt] = $this->prepareChatForMessage();
+
+            $messages = $this->createMessages($title, $content, $role, $prompt);
+
+            $settings = resolve(SettingsRepositoryInterface::class);
+            $userPromptId = $settings->get('muhammedsaidckr-chatgpt.user_prompt');
+
+            // get the posts where the number is greater than 1 to the last message not include last message
+            $posts = $discussion->posts()
+                ->where('number', '>', 1)
+                ->where('number', '<', $commentPost->number)
+                ->get();
+
+            foreach ($posts as $post) {
+                if ($post->type == 'comment') {
+                    $messages[] = [
+                        'role' => $post->user_id == $userPromptId ? 'assistant' : 'user',
+                        'content' => $post->content
+                    ];
+                }
+            }
+
+            // add the last message with the prompt
+            $messages[] = $this->createMessageForUser($commentPost->content);
+
+            $log->info('[ChatGPT] Sending request to OpenAI for comment reply', [
+                'model' => $this->model,
+                'message_count' => count($messages),
+                'token_param' => $this->isReasoningModel() ? 'max_completion_tokens' : 'max_tokens'
+            ]);
+
+            // answer to the post
+            $response = $this->sendCompletionRequest($messages);
+
+            if (empty($response->choices)) {
+                $log->warning('[ChatGPT] Empty response from OpenAI for comment', [
+                    'post_id' => $commentPost->id,
+                    'model' => $this->model
+                ]);
+                return;
+            }
+
+            $log->info('[ChatGPT] Received response from OpenAI for comment', [
+                'post_id' => $commentPost->id,
+                'choices_count' => count($response->choices)
+            ]);
+
+            $saved = $this->saveResponse($response, $discussion->id);
+
+            if ($saved) {
+                $log->info('[ChatGPT] Successfully saved comment response', [
+                    'discussion_id' => $discussion->id,
+                    'post_id' => $commentPost->id
+                ]);
+            } else {
+                $log->error('[ChatGPT] Failed to save comment response', [
+                    'discussion_id' => $discussion->id,
+                    'post_id' => $commentPost->id
+                ]);
+            }
+        } catch (\Exception $e) {
+            $log->error('[ChatGPT] Exception in repliesToCommentPost', [
+                'post_id' => $commentPost->id ?? null,
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
         }
-
-        // add the last message with the prompt
-        $messages[] = $this->createMessageForUser($commentPost->content);
-
-        // answer to the post
-        $response = $this->sendCompletionRequest($messages);
-
-        if (empty($response->choices)) {
-            return;
-        }
-
-        $this->saveResponse($response, $discussion->id);
     }
 
     private function prepareChatForMessage(): array
@@ -134,20 +230,55 @@ class Agent
 
     private function sendCompletionRequest(array $messages)
     {
-        $params = [
-            'model' => $this->model,
-            'messages' => $messages,
-        ];
+        $log = resolve('log');
 
-        // Use max_completion_tokens for reasoning models (o1, o3, o4, gpt-5 series)
-        // Use max_tokens for legacy models (gpt-3.5, gpt-4, etc.)
-        if ($this->isReasoningModel()) {
-            $params['max_completion_tokens'] = $this->maxTokens;
-        } else {
-            $params['max_tokens'] = $this->maxTokens;
+        try {
+            $params = [
+                'model' => $this->model,
+                'messages' => $messages,
+            ];
+
+            // Use max_completion_tokens for reasoning models (o1, o3, o4, gpt-5 series)
+            // Use max_tokens for legacy models (gpt-3.5, gpt-4, etc.)
+            if ($this->isReasoningModel()) {
+                $params['max_completion_tokens'] = $this->maxTokens;
+            } else {
+                $params['max_tokens'] = $this->maxTokens;
+            }
+
+            $log->debug('[ChatGPT] API Request Parameters', [
+                'model' => $params['model'],
+                'token_param_used' => $this->isReasoningModel() ? 'max_completion_tokens' : 'max_tokens',
+                'token_value' => $this->maxTokens,
+                'message_count' => count($messages)
+            ]);
+
+            $response = $this->client->chat()->create($params);
+
+            $log->debug('[ChatGPT] API Response Received', [
+                'has_choices' => !empty($response->choices),
+                'choice_count' => count($response->choices ?? [])
+            ]);
+
+            return $response;
+        } catch (\OpenAI\Exceptions\ErrorException $e) {
+            $log->error('[ChatGPT] OpenAI API Error', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'model' => $this->model,
+                'is_reasoning_model' => $this->isReasoningModel(),
+                'token_param' => $this->isReasoningModel() ? 'max_completion_tokens' : 'max_tokens',
+                'token_value' => $this->maxTokens
+            ]);
+            throw $e;
+        } catch (\Exception $e) {
+            $log->error('[ChatGPT] Unexpected error in sendCompletionRequest', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'model' => $this->model
+            ]);
+            throw $e;
         }
-
-        return $this->client->chat()->create($params);
     }
 
     /**
@@ -176,15 +307,28 @@ class Agent
 
     private function saveResponse($response, $discussionId): bool
     {
+        $log = resolve('log');
+
         try {
             $choice = Arr::first($response->choices);
             $respond = $choice->message->content;
 
             if (empty($respond)) {
+                $log->warning('[ChatGPT] Empty content in response', [
+                    'discussion_id' => $discussionId,
+                    'has_choice' => !empty($choice),
+                    'has_message' => !empty($choice->message ?? null)
+                ]);
                 return false;
             }
 
             $userPrompt = $this->user->id;
+
+            $log->debug('[ChatGPT] Saving response as CommentPost', [
+                'discussion_id' => $discussionId,
+                'user_id' => $userPrompt,
+                'content_length' => strlen($respond)
+            ]);
 
             CommentPost::reply(
                 discussionId: $discussionId,
@@ -195,7 +339,12 @@ class Agent
 
             return true;
         } catch (\Exception $e) {
-            resolve('log')->error($e->getMessage());
+            $log->error('[ChatGPT] Exception in saveResponse', [
+                'discussion_id' => $discussionId,
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
