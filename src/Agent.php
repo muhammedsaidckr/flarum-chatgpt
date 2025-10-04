@@ -134,13 +134,43 @@ class Agent
 
     private function sendCompletionRequest(array $messages)
     {
-        return $this->client->chat()->create(
-            [
-                'model' => $this->model,
-                'messages' => $messages,
-                'max_tokens' => $this->maxTokens
-            ]
-        );
+        $params = [
+            'model' => $this->model,
+            'messages' => $messages,
+        ];
+
+        // Use max_completion_tokens for reasoning models (o1, o3, o4, gpt-5 series)
+        // Use max_tokens for legacy models (gpt-3.5, gpt-4, etc.)
+        if ($this->isReasoningModel()) {
+            $params['max_completion_tokens'] = $this->maxTokens;
+        } else {
+            $params['max_tokens'] = $this->maxTokens;
+        }
+
+        return $this->client->chat()->create($params);
+    }
+
+    /**
+     * Determine if the current model is a reasoning model.
+     * Reasoning models (o1, o3, o4, gpt-5 series) require max_completion_tokens
+     * instead of max_tokens.
+     *
+     * @return bool
+     */
+    private function isReasoningModel(): bool
+    {
+        $modelLower = strtolower($this->model);
+
+        // Check for reasoning model patterns
+        $reasoningPatterns = ['o1', 'o3', 'o4', 'gpt-5'];
+
+        foreach ($reasoningPatterns as $pattern) {
+            if (str_contains($modelLower, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
 
