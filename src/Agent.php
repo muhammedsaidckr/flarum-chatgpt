@@ -246,7 +246,7 @@ class Agent
                 $params['max_tokens'] = $this->maxTokens;
             }
 
-            $log->debug('[ChatGPT] API Request Parameters', [
+            $log->info('[ChatGPT] API Request Parameters', [
                 'model' => $params['model'],
                 'token_param_used' => $this->isReasoningModel() ? 'max_completion_tokens' : 'max_tokens',
                 'token_value' => $this->maxTokens,
@@ -255,7 +255,7 @@ class Agent
 
             $response = $this->client->chat()->create($params);
 
-            $log->debug('[ChatGPT] API Response Received', [
+            $log->info('[ChatGPT] API Response Received', [
                 'has_choices' => !empty($response->choices),
                 'choice_count' => count($response->choices ?? [])
             ]);
@@ -314,7 +314,7 @@ class Agent
             $respond = $choice->message->content ?? null;
 
             // Log full response structure for debugging
-            $log->debug('[ChatGPT] Response details', [
+            $log->info('[ChatGPT] Response details', [
                 'discussion_id' => $discussionId,
                 'has_choice' => !empty($choice),
                 'has_message' => !empty($choice->message ?? null),
@@ -337,7 +337,7 @@ class Agent
 
             $userPrompt = $this->user->id;
 
-            $log->debug('[ChatGPT] Saving response as CommentPost', [
+            $log->info('[ChatGPT] Saving response as CommentPost', [
                 'discussion_id' => $discussionId,
                 'user_id' => $userPrompt,
                 'content_length' => strlen($respond)
