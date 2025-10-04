@@ -364,14 +364,6 @@ class Agent
 
     private function createMessages($title, $content, $role, $prompt): array
     {
-        return [
-            $this->createMessageForSystem($role, $prompt, $title),
-            $this->createMessageForUser($content)
-        ];
-    }
-
-    private function createMessageForSystem($role, $prompt, $title): array
-    {
         $prompt = str_replace(
             ['[title]', '[content]'],
             [$title, ''],
@@ -380,12 +372,26 @@ class Agent
         $systemPrompt = $role . ' ' . $prompt;
 
         // Reasoning models (o1, o3, o4, gpt-5) don't support 'system' role
-        // Use 'user' role instead for these models
-        $messageRole = $this->isReasoningModel() ? 'user' : 'system';
+        // Prepend system instructions to first user message instead
+        if ($this->isReasoningModel()) {
+            return [
+                [
+                    'role' => 'user',
+                    'content' => $systemPrompt . "\n\n" . $content
+                ]
+            ];
+        }
 
+        // Legacy models: use system role + user message
         return [
-            'role' => $messageRole,
-            'content' => $systemPrompt
+            [
+                'role' => 'system',
+                'content' => $systemPrompt
+            ],
+            [
+                'role' => 'user',
+                'content' => $content
+            ]
         ];
     }
 
