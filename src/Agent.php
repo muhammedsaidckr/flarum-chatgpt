@@ -378,8 +378,13 @@ class Agent
             $prompt
         );
         $systemPrompt = $role . ' ' . $prompt;
+
+        // Reasoning models (o1, o3, o4, gpt-5) don't support 'system' role
+        // Use 'user' role instead for these models
+        $messageRole = $this->isReasoningModel() ? 'user' : 'system';
+
         return [
-            'role' => 'system',
+            'role' => $messageRole,
             'content' => $systemPrompt
         ];
     }
