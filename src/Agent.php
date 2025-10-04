@@ -311,13 +311,26 @@ class Agent
 
         try {
             $choice = Arr::first($response->choices);
-            $respond = $choice->message->content;
+            $respond = $choice->message->content ?? null;
+
+            // Log full response structure for debugging
+            $log->debug('[ChatGPT] Response details', [
+                'discussion_id' => $discussionId,
+                'has_choice' => !empty($choice),
+                'has_message' => !empty($choice->message ?? null),
+                'content' => $respond,
+                'content_length' => strlen($respond ?? ''),
+                'finish_reason' => $choice->finish_reason ?? null,
+                'refusal' => $choice->message->refusal ?? null
+            ]);
 
             if (empty($respond)) {
                 $log->warning('[ChatGPT] Empty content in response', [
                     'discussion_id' => $discussionId,
                     'has_choice' => !empty($choice),
-                    'has_message' => !empty($choice->message ?? null)
+                    'has_message' => !empty($choice->message ?? null),
+                    'finish_reason' => $choice->finish_reason ?? 'unknown',
+                    'refusal' => $choice->message->refusal ?? null
                 ]);
                 return false;
             }
