@@ -140,7 +140,7 @@ Settings are stored in Flarum settings repository with prefix `muhammedsaidckr-c
 
 **PHP:**
 - `flarum/core`: ^1.2.0
-- `openai-php/client`: ^0.8.0
+- `openai-php/client`: ^0.16.0
 
 **JavaScript:**
 - Webpack-based build with TypeScript support

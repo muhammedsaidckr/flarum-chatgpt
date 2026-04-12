@@ -65,7 +65,7 @@ class ClientProvider extends AbstractServiceProvider
         $agent = new Agent(
             user: $user,
             client: $client,
-            model: $settings->get('muhammedsaidckr-chatgpt.model'),
+            model: $settings->get('muhammedsaidckr-chatgpt.custom_model') ?: $settings->get('muhammedsaidckr-chatgpt.model'),
             maxTokens: $settings->get('muhammedsaidckr-chatgpt.max_tokens'),
         );
 

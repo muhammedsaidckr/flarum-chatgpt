@@ -41,6 +41,8 @@ muhammedsaidckr-chatgpt:
       fetch_models_error: Modeller alınamadı. Lütfen API anahtarınızı ve temel URI ayarlarınızı kontrol edin.
       models_last_fetched: "Son güncelleme: {date}"
       models_never_fetched: Modeller hiç alınmadı. En son modelleri almak için yukarıdaki düğmeye tıklayın.
+      custom_model_label: Özel Model Adı
+      custom_model_help: Açılır menüdeki seçimi geçersiz kılmak için özel bir model adı girin (örn. deepseek-chat, llama3). Seçili modeli kullanmak için boş bırakın.
 
     permissions:
       use_chatgpt_assistant_label: Use ChatGPT Assistant

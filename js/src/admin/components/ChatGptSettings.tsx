@@ -154,6 +154,13 @@ export default class ChatGptSettings extends ExtensionPage {
               </div>
             </div>
             {this.buildSettingComponent({
+              setting: 'muhammedsaidckr-chatgpt.custom_model',
+              type: 'text',
+              label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.custom_model_label'),
+              help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.custom_model_help'),
+              placeholder: 'deepseek-chat',
+            })}
+            {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.max_tokens',
               type: 'number',
               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.max_tokens_label'),

@@ -41,6 +41,8 @@ muhammedsaidckr-chatgpt:
       fetch_models_error: Failed to fetch models. Please check your API key and base URI settings.
       models_last_fetched: "Last updated: {date}"
       models_never_fetched: Models have never been fetched. Click the button above to fetch the latest models.
+      custom_model_label: Custom Model Name
+      custom_model_help: Enter a custom model name to override the dropdown above (e.g. deepseek-chat, llama3). Leave empty to use the selected model.
 
     permissions:
       use_chatgpt_assistant_label: Use ChatGPT Assistant
