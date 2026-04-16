@@ -327,14 +327,18 @@ class Agent
 
             $log->info('[ChatGPT] GPT-5 Responses API Response Received', [
                 'has_output' => isset($response->output),
-                'output_count' => count($response->output ?? [])
+                'output_count' => count($response->output ?? []),
+                'status' => $response->status ?? 'unknown'
             ]);
 
             $content = null;
             $cot = null;
+            $refusal = $response->refusal ?? null;
 
             if (isset($response->output)) {
+                $outputTypes = [];
                 foreach ($response->output as $item) {
+                    $outputTypes[] = $item->type;
                     if ($item->type === 'message' && !empty($item->content)) {
                         foreach ($item->content as $part) {
                             if ($part->type === 'output_text') {
@@ -353,6 +357,18 @@ class Agent
                         $cot = implode("\n", $cotParts);
                     }
                 }
+                $log->debug('[ChatGPT] GPT-5 Response Output Types', [
+                    'types' => $outputTypes,
+                    'has_content' => !empty($content),
+                    'has_cot' => !empty($cot)
+                ]);
+            }
+
+            if (empty($content) && ($response->status ?? '') === 'incomplete') {
+                $log->warning('[ChatGPT] GPT-5 response was incomplete and produced no text content. This often happens if max_output_tokens is too low for the reasoning process.', [
+                    'discussion_id' => $discussionId,
+                    'max_output_tokens' => $this->maxTokens
+                ]);
             }
 
             // Store CoT for next turn
@@ -367,6 +383,7 @@ class Agent
                     (object) [
                         'message' => (object) [
                             'content' => $content,
+                            'refusal' => $refusal,
                         ],
                         'finish_reason' => $response->status ?? 'stop',
                     ]
