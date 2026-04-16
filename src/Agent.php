@@ -19,8 +19,8 @@ class Agent
     public function __construct(
         public readonly User $user,
         protected ?OpenAIClientInterface    $client = null,
-        string               $model = null,
-        int                  $maxTokens = null
+        ?string               $model = null,
+        ?int                  $maxTokens = null
     )
     {
         $this->model = $model ?? 'gpt-3.5-turbo-instruct';
@@ -237,7 +237,7 @@ class Agent
         return $this->sendCompletionRequest($messages, $discussionId);
     }
 
-    private function sendCompletionRequest(array $messages, int $discussionId = null)
+    private function sendCompletionRequest(array $messages, ?int $discussionId = null)
     {
         $log = resolve('log');
 
@@ -326,13 +326,38 @@ class Agent
             $response = $this->client->responses()->create($params);
 
             $log->info('[ChatGPT] GPT-5 Responses API Response Received', [
-                'has_content' => isset($response->content),
-                'has_cot' => isset($response->cot)
+                'has_output' => isset($response->output),
+                'output_count' => count($response->output ?? [])
             ]);
 
+            $content = null;
+            $cot = null;
+
+            if (isset($response->output)) {
+                foreach ($response->output as $item) {
+                    if ($item->type === 'message' && !empty($item->content)) {
+                        foreach ($item->content as $part) {
+                            if ($part->type === 'output_text') {
+                                $content = $part->text;
+                                break 2;
+                            }
+                        }
+                    }
+                    if ($item->type === 'reasoning' && !empty($item->content)) {
+                        $cotParts = [];
+                        foreach ($item->content as $part) {
+                            if ($part->type === 'reasoning_text') {
+                                $cotParts[] = $part->text;
+                            }
+                        }
+                        $cot = implode("\n", $cotParts);
+                    }
+                }
+            }
+
             // Store CoT for next turn
-            if (isset($response->cot)) {
-                $this->storeCoT($discussionId, $response->cot);
+            if ($cot) {
+                $this->storeCoT($discussionId, $cot);
             }
 
             // We need to normalize the response to match the ChatCompletion format 
@@ -341,12 +366,12 @@ class Agent
                 'choices' => [
                     (object) [
                         'message' => (object) [
-                            'content' => $response->content,
+                            'content' => $content,
                         ],
-                        'finish_reason' => $response->finish_reason ?? 'stop',
+                        'finish_reason' => $response->status ?? 'stop',
                     ]
                 ],
-                'cot' => $response->cot ?? null
+                'cot' => $cot
             ];
         } catch (\Exception $e) {
             $log->error('[ChatGPT] GPT-5 Responses API Error', [
@@ -388,8 +413,8 @@ class Agent
     {
         $modelLower = strtolower($this->model);
 
-        // Check for reasoning model patterns (excluding gpt-5 which is handled separately)
-        $reasoningPatterns = ['o1', 'o3', 'o4'];
+        // Check for reasoning model patterns (o1, o3, o4, gpt-5)
+        $reasoningPatterns = ['o1', 'o3', 'o4', 'gpt-5'];
 
         foreach ($reasoningPatterns as $pattern) {
             if (str_contains($modelLower, $pattern)) {

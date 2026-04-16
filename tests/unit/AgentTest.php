@@ -14,6 +14,8 @@ use Mockery;
 
 class AgentTest extends TestCase
 {
+    protected $dbMock;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -22,6 +24,9 @@ class AgentTest extends TestCase
 
         $settingsMock = $this->createMock(SettingsRepositoryInterface::class);
         \Illuminate\Container\Container::getInstance()->instance(SettingsRepositoryInterface::class, $settingsMock);
+
+        $this->dbMock = Mockery::mock('Illuminate\Database\DatabaseManager');
+        \Illuminate\Container\Container::getInstance()->instance('db', $this->dbMock);
     }
 
     protected function tearDown(): void
@@ -51,8 +56,41 @@ class AgentTest extends TestCase
         $agentO1 = new Agent($user, $client, 'o1-preview');
         $this->assertTrue($this->invokeMethod($agentO1, 'isReasoningModel'));
 
+        $agentGpt5 = new Agent($user, $client, 'gpt-5-preview');
+        $this->assertTrue($this->invokeMethod($agentGpt5, 'isReasoningModel'));
+
         $agentGpt4 = new Agent($user, $client, 'gpt-4');
         $this->assertFalse($this->invokeMethod($agentGpt4, 'isReasoningModel'));
+    }
+
+    public function testCreateMessagesFormat()
+    {
+        $user = $this->createMock(User::class);
+        $client = $this->createMock(OpenAIClientInterface::class);
+        $title = 'Title';
+        $content = 'Content';
+        $role = 'Role';
+        $prompt = 'Prompt [title] [content]';
+
+        // Test GPT-5 (Reasoning model) - should NOT have system role
+        $agentGpt5 = new Agent($user, $client, 'gpt-5-preview');
+        $messagesGpt5 = $this->invokeMethod($agentGpt5, 'createMessages', [$title, $content, $role, $prompt]);
+        
+        $this->assertCount(1, $messagesGpt5);
+        $this->assertEquals('user', $messagesGpt5[0]['role']);
+        $this->assertStringContainsString($role, $messagesGpt5[0]['content']);
+        $this->assertStringContainsString('Prompt Title', $messagesGpt5[0]['content']);
+        $this->assertStringContainsString($content, $messagesGpt5[0]['content']);
+
+        // Test GPT-4 (Legacy model) - should have system role
+        $agentGpt4 = new Agent($user, $client, 'gpt-4');
+        $messagesGpt4 = $this->invokeMethod($agentGpt4, 'createMessages', [$title, $content, $role, $prompt]);
+        
+        $this->assertCount(2, $messagesGpt4);
+        $this->assertEquals('system', $messagesGpt4[0]['role']);
+        $this->assertEquals('user', $messagesGpt4[1]['role']);
+        $this->assertStringContainsString($role, $messagesGpt4[0]['content']);
+        $this->assertEquals($content, $messagesGpt4[1]['content']);
     }
 
     public function testSendRequestRouting()
@@ -70,15 +108,28 @@ class AgentTest extends TestCase
         $responsesMock->expects($this->once())
             ->method('create')
             ->willReturn((object)[
-                'content' => 'hi',
-                'cot' => 'thought process',
-                'finish_reason' => 'stop'
+                'status' => 'stop',
+                'output' => [
+                    (object)[
+                        'type' => 'reasoning',
+                        'content' => [
+                            (object)['type' => 'reasoning_text', 'text' => 'thought process']
+                        ]
+                    ],
+                    (object)[
+                        'type' => 'message',
+                        'content' => [
+                            (object)['type' => 'output_text', 'text' => 'hi']
+                        ]
+                    ]
+                ]
             ]);
 
-        DB::shouldReceive('table')->with('chatgpt_cot')->andReturnSelf();
-        DB::shouldReceive('where')->with('discussion_id', $discussionId)->andReturnSelf();
-        DB::shouldReceive('first')->andReturn(null);
-        DB::shouldReceive('updateOrInsert')->once()->andReturn(true);
+        $queryMock = Mockery::mock('Illuminate\Database\Query\Builder');
+        $this->dbMock->shouldReceive('table')->with('chatgpt_cot')->andReturn($queryMock);
+        $queryMock->shouldReceive('where')->with('discussion_id', $discussionId)->andReturnSelf();
+        $queryMock->shouldReceive('first')->andReturn(null);
+        $queryMock->shouldReceive('updateOrInsert')->once()->andReturn(true);
 
         $this->invokeMethod($agentGpt5, 'sendRequest', [$messages, $discussionId]);
 
@@ -143,9 +194,10 @@ class AgentTest extends TestCase
         $client->method('responses')->willReturn($responsesMock);
 
         // 1. Mock retrieving existing CoT
-        DB::shouldReceive('table')->with('chatgpt_cot')->andReturnSelf();
-        DB::shouldReceive('where')->with('discussion_id', $discussionId)->andReturnSelf();
-        DB::shouldReceive('first')->once()->andReturn((object)['cot' => $storedCoT]);
+        $queryMock = Mockery::mock('Illuminate\Database\Query\Builder');
+        $this->dbMock->shouldReceive('table')->with('chatgpt_cot')->andReturn($queryMock);
+        $queryMock->shouldReceive('where')->with('discussion_id', $discussionId)->andReturnSelf();
+        $queryMock->shouldReceive('first')->once()->andReturn((object)['cot' => $storedCoT]);
 
         // 2. Verify that the API request includes the previous_cot
         $responsesMock->expects($this->once())
@@ -154,13 +206,25 @@ class AgentTest extends TestCase
                 return isset($params['previous_cot']) && $params['previous_cot'] === $storedCoT;
             }))
             ->willReturn((object)[
-                'content' => 'hi',
-                'cot' => $newCoT,
-                'finish_reason' => 'stop'
+                'status' => 'stop',
+                'output' => [
+                    (object)[
+                        'type' => 'reasoning',
+                        'content' => [
+                            (object)['type' => 'reasoning_text', 'text' => $newCoT]
+                        ]
+                    ],
+                    (object)[
+                        'type' => 'message',
+                        'content' => [
+                            (object)['type' => 'output_text', 'text' => 'hi']
+                        ]
+                    ]
+                ]
             ]);
 
         // 3. Verify that the new CoT is stored
-        DB::shouldReceive('updateOrInsert')->once()->with(
+        $queryMock->shouldReceive('updateOrInsert')->once()->with(
             ['discussion_id' => $discussionId],
             Mockery::on(function ($data) use ($newCoT) {
                 return $data['cot'] === $newCoT && isset($data['created_at']);

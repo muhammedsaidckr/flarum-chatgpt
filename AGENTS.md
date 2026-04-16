@@ -4,11 +4,11 @@
 
 ### Backend (PHP)
 ```bash
-composer install                    # install PHP deps
-composer test                       # run all tests (unit + integration)
-composer test:unit                  # unit tests only
-composer test:integration           # integration tests only (requires DB setup)
-composer test:setup                 # one-time integration test DB setup
+docker compose exec php composer install                    # install PHP deps
+docker compose -f docker-compose.test.yml run --rm tests composer test:unit                       # run all tests (unit + integration)
+docker compose exec php composer test:unit                  # unit tests only
+docker compose exec php composer test:integration           # integration tests only (requires DB setup)
+docker compose exec php composer test:setup                 # one-time integration test DB setup
 ```
 
 ### Frontend (JS)
