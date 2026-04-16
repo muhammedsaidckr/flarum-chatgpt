@@ -298,7 +298,7 @@ class Agent
         try {
             $params = [
                 'model' => $this->model,
-                'messages' => $messages,
+                'input' => $messages,
                 'max_output_tokens' => $this->maxTokens,
                 'reasoning' => [
                     'effort' => $settings->get('muhammedsaidckr-chatgpt.gpt5_reasoning_effort', 'medium'),
