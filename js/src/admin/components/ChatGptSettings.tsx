@@ -160,15 +160,38 @@ export default class ChatGptSettings extends ExtensionPage {
               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.custom_model_help'),
               placeholder: 'deepseek-chat',
             })}
-            {this.buildSettingComponent({
-              setting: 'muhammedsaidckr-chatgpt.max_tokens',
-              type: 'number',
-              label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.max_tokens_label'),
-              help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.max_tokens_help', {
-                a: <a href="https://help.openai.com/en/articles/4936856" target="_blank" rel="noopener" />,
-              }),
-              default: 100,
-            })}
+             {this.buildSettingComponent({
+               setting: 'muhammedsaidckr-chatgpt.max_tokens',
+               type: 'number',
+               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.max_tokens_label'),
+               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.max_tokens_help', {
+                 a: <a href="https://help.openai.com/en/articles/4936856" target="_blank" rel="noopener" />,
+               }),
+               default: 100,
+             })}
+             {this.buildSettingComponent({
+               setting: 'muhammedsaidckr-chatgpt.gpt5_reasoning_effort',
+               type: 'dropdown',
+               options: {
+                 minimal: 'Minimal',
+                 low: 'Low',
+                 medium: 'Medium',
+                 high: 'High',
+               },
+               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.gpt5_reasoning_effort_label'),
+               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.gpt5_reasoning_effort_help'),
+             })}
+             {this.buildSettingComponent({
+               setting: 'muhammedsaidckr-chatgpt.gpt5_verbosity',
+               type: 'dropdown',
+               options: {
+                 low: 'Low',
+                 medium: 'Medium',
+                 high: 'High',
+               },
+               label: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.gpt5_verbosity_label'),
+               help: app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.gpt5_verbosity_help'),
+             })}
             {/* new setting for moderation */}
             {this.buildSettingComponent({
               setting: 'muhammedsaidckr-chatgpt.moderation',

@@ -71,6 +71,12 @@ npm run build-typings
   - `repliesToCommentPost(CommentPost)`: Generates AI response to comment posts
   - `checkModeration()`: Uses OpenAI moderation API to check for inappropriate content
   - Manages conversation history by building message arrays from discussion posts
+  - **GPT-5 Support:** Routes requests to `/v1/responses` for GPT-5 models, handling `max_output_tokens`, `reasoning` effort, and `text` verbosity.
+  - **Chain of Thought (CoT):** Implements storage and retrieval of CoT per discussion in `chatgpt_cot` table to maintain context between turns.
+
+- **Service Providers:**
+  - `ClientProvider`: Registers OpenAI client singleton with API key and base URI from settings
+  - `BindingsProvider`: Registers service bindings
 
 - **Service Providers:**
   - `ClientProvider`: Registers OpenAI client singleton with API key and base URI from settings
@@ -119,6 +125,8 @@ Settings are stored in Flarum settings repository with prefix `muhammedsaidckr-c
 - `continue_to_reply_count`: Max number of AI replies per discussion (default: 5)
 - `moderation`: Enable OpenAI moderation checks (default: false)
 - `enabled-tags`: JSON array of tag IDs where the assistant is enabled
+- `gpt5_reasoning_effort`: Reasoning effort for GPT-5 models (minimal, low, medium, high; default: medium)
+- `gpt5_verbosity`: Output verbosity for GPT-5 models (low, medium, high; default: medium)
 
 ### Data Flow
 

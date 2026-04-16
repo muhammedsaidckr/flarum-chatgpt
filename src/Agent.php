@@ -7,8 +7,9 @@ use Flarum\Post\CommentPost;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\User;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use OpenAI;
-use OpenAI\Client;
+
 
 
 class Agent
@@ -18,7 +19,7 @@ class Agent
 
     public function __construct(
         public readonly User $user,
-        protected ?Client    $client = null,
+        protected ?OpenAIClientInterface    $client = null,
         string               $model = null,
         int                  $maxTokens = null
     )
@@ -53,7 +54,7 @@ class Agent
                 'token_param' => $this->isReasoningModel() ? 'max_completion_tokens' : 'max_tokens'
             ]);
 
-            $response = $this->sendCompletionRequest($messages);
+            $response = $this->sendRequest($messages, $discussion->id);
 
             if (empty($response->choices)) {
                 $log->warning('[ChatGPT] Empty response from OpenAI', [
@@ -148,7 +149,7 @@ class Agent
             ]);
 
             // answer to the post
-            $response = $this->sendCompletionRequest($messages);
+            $response = $this->sendRequest($messages, $discussion->id);
 
             if (empty($response->choices)) {
                 $log->warning('[ChatGPT] Empty response from OpenAI for comment', [
@@ -228,7 +229,16 @@ class Agent
     }
 
 
-    private function sendCompletionRequest(array $messages)
+    private function sendRequest(array $messages, int $discussionId)
+    {
+        if ($this->isGpt5Model()) {
+            return $this->sendResponsesApiRequest($messages, $discussionId);
+        }
+
+        return $this->sendCompletionRequest($messages, $discussionId);
+    }
+
+    private function sendCompletionRequest(array $messages, int $discussionId = null)
     {
         $log = resolve('log');
 
@@ -246,7 +256,7 @@ class Agent
                 $params['max_tokens'] = $this->maxTokens;
             }
 
-            $log->info('[ChatGPT] API Request Parameters', [
+            $log->debug('[ChatGPT] API Request Parameters', [
                 'model' => $params['model'],
                 'token_param_used' => $this->isReasoningModel() ? 'max_completion_tokens' : 'max_tokens',
                 'token_value' => $this->maxTokens,
@@ -255,7 +265,7 @@ class Agent
 
             $response = $this->client->chat()->create($params);
 
-            $log->info('[ChatGPT] API Response Received', [
+            $log->debug('[ChatGPT] API Response Received', [
                 'has_choices' => !empty($response->choices),
                 'choice_count' => count($response->choices ?? [])
             ]);
@@ -281,6 +291,88 @@ class Agent
         }
     }
 
+    private function sendResponsesApiRequest(array $messages, int $discussionId)
+    {
+        $log = resolve('log');
+        $settings = resolve(SettingsRepositoryInterface::class);
+
+        try {
+            $params = [
+                'model' => $this->model,
+                'messages' => $messages,
+                'max_output_tokens' => $this->maxTokens,
+                'reasoning' => [
+                    'effort' => $settings->get('muhammedsaidckr-chatgpt.gpt5_reasoning_effort', 'medium'),
+                ],
+                'text' => [
+                    'verbosity' => $settings->get('muhammedsaidckr-chatgpt.gpt5_verbosity', 'medium'),
+                ],
+            ];
+
+            // Store and retrieve CoT for better responses
+            if ($previousCoT = $this->getStoredCoT($discussionId)) {
+                $params['previous_cot'] = $previousCoT;
+            }
+
+            $log->info('[ChatGPT] GPT-5 Responses API Request Parameters', [
+                'model' => $params['model'],
+                'max_output_tokens' => $params['max_output_tokens'],
+                'reasoning_effort' => $params['reasoning']['effort'],
+                'verbosity' => $params['text']['verbosity'],
+                'message_count' => count($messages),
+                'has_previous_cot' => isset($params['previous_cot'])
+            ]);
+
+            // Note: This assumes the OpenAI client supports the responses() endpoint.
+            $response = $this->client->responses()->create($params);
+
+            $log->info('[ChatGPT] GPT-5 Responses API Response Received', [
+                'has_content' => isset($response->content),
+                'has_cot' => isset($response->cot)
+            ]);
+
+            // Store CoT for next turn
+            if (isset($response->cot)) {
+                $this->storeCoT($discussionId, $response->cot);
+            }
+
+            // We need to normalize the response to match the ChatCompletion format 
+            // so that saveResponse() continues to work.
+            return (object) [
+                'choices' => [
+                    (object) [
+                        'message' => (object) [
+                            'content' => $response->content,
+                        ],
+                        'finish_reason' => $response->finish_reason ?? 'stop',
+                    ]
+                ],
+                'cot' => $response->cot ?? null
+            ];
+        } catch (\Exception $e) {
+            $log->error('[ChatGPT] GPT-5 Responses API Error', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+                'model' => $this->model
+            ]);
+            throw $e;
+        }
+    }
+
+    private function storeCoT(int $discussionId, string $cot): void
+    {
+        DB::table('chatgpt_cot')->updateOrInsert(
+            ['discussion_id' => $discussionId],
+            ['cot' => $cot, 'created_at' => date('Y-m-d H:i:s')]
+        );
+    }
+
+    private function getStoredCoT(int $discussionId): ?string
+    {
+        $record = DB::table('chatgpt_cot')->where('discussion_id', $discussionId)->first();
+        return $record ? $record->cot : null;
+    }
+
     /**
      * Determine if the current model is a reasoning model.
      * Reasoning models (o1, o3, o4, gpt-5 series) require max_completion_tokens
@@ -288,12 +380,17 @@ class Agent
      *
      * @return bool
      */
+    private function isGpt5Model(): bool
+    {
+        return str_contains(strtolower($this->model), 'gpt-5');
+    }
+
     private function isReasoningModel(): bool
     {
         $modelLower = strtolower($this->model);
 
-        // Check for reasoning model patterns
-        $reasoningPatterns = ['o1', 'o3', 'o4', 'gpt-5'];
+        // Check for reasoning model patterns (excluding gpt-5 which is handled separately)
+        $reasoningPatterns = ['o1', 'o3', 'o4'];
 
         foreach ($reasoningPatterns as $pattern) {
             if (str_contains($modelLower, $pattern)) {

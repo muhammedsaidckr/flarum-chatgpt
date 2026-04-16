@@ -43,6 +43,11 @@ muhammedsaidckr-chatgpt:
       models_never_fetched: Models have never been fetched. Click the button above to fetch the latest models.
       custom_model_label: Custom Model Name
       custom_model_help: Enter a custom model name to override the dropdown above (e.g. deepseek-chat, llama3). Leave empty to use the selected model.
+      gpt5_reasoning_effort_label: GPT-5 Reasoning Effort
+      gpt5_reasoning_effort_help: Controls the amount of reasoning GPT-5 performs before answering. (minimal, low, medium, high)
+      gpt5_verbosity_label: GPT-5 Output Verbosity
+      gpt5_verbosity_help: Controls the length and detail of GPT-5 responses. (low, medium, high)
+
 
     permissions:
       use_chatgpt_assistant_label: Use ChatGPT Assistant

@@ -73,7 +73,9 @@ return [
         ->default('muhammedsaidckr-chatgpt.moderation', false)
         ->default('muhammedsaidckr-chatgpt.base_uri', 'https://api.openai.com/v1/')
         ->default('muhammedsaidckr-chatgpt.cached_models', '[]')
-        ->default('muhammedsaidckr-chatgpt.models_last_fetched', 0)
-        ->serializeToForum('chatGptUserPromptId', 'muhammedsaidckr-chatgpt.user_prompt')
+         ->default('muhammedsaidckr-chatgpt.models_last_fetched', 0)
+         ->default('muhammedsaidckr-chatgpt.gpt5_reasoning_effort', 'medium')
+         ->default('muhammedsaidckr-chatgpt.gpt5_verbosity', 'medium')
+         ->serializeToForum('chatGptUserPromptId', 'muhammedsaidckr-chatgpt.user_prompt')
         ->serializeToForum('chatGptBadgeText', 'muhammedsaidckr-chatgpt.user_prompt_badge_text'),
 ];
