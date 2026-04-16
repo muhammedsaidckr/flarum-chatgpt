@@ -57,9 +57,8 @@ class ClientProvider extends AbstractServiceProvider
             );
         }
 
-        /** @var Client $client */
         $client = $this->container->has(Client::class)
-            ? $this->container->make(Client::class)
+            ? new OpenAIClientWrapper($this->container->make(Client::class))
             : null;
 
         $agent = new Agent(
