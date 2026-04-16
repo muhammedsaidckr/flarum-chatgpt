@@ -7,7 +7,6 @@ use Flarum\Post\CommentPost;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Flarum\User\User;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
 use OpenAI;
 
 
@@ -361,7 +360,7 @@ class Agent
 
     private function storeCoT(int $discussionId, string $cot): void
     {
-        DB::table('chatgpt_cot')->updateOrInsert(
+        resolve('db')->table('chatgpt_cot')->updateOrInsert(
             ['discussion_id' => $discussionId],
             ['cot' => $cot, 'created_at' => date('Y-m-d H:i:s')]
         );
@@ -369,7 +368,7 @@ class Agent
 
     private function getStoredCoT(int $discussionId): ?string
     {
-        $record = DB::table('chatgpt_cot')->where('discussion_id', $discussionId)->first();
+        $record = resolve('db')->table('chatgpt_cot')->where('discussion_id', $discussionId)->first();
         return $record ? $record->cot : null;
     }
 
