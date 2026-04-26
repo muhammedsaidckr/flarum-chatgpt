@@ -16,16 +16,35 @@ const FALLBACK_MODELS = [
   'chatgpt-4o-latest',
 ];
 
+type ModelPreset = {
+  max_tokens: number;
+  gpt5_reasoning_effort: string;
+  gpt5_verbosity: string;
+};
+
+type ModelMetadata = {
+  family: string;
+  api_mode: string;
+  is_reasoning_model: boolean;
+  preset: ModelPreset;
+};
+
+type ModelMetadataMap = Record<string, ModelMetadata>;
+
 export default class ChatGptSettings extends ExtensionPage {
   loading!: boolean;
   isFetchingModels!: boolean;
   models!: Record<string, string>;
+  modelMetadata!: ModelMetadataMap;
+  recommendedModel!: string;
 
   oninit(vnode: any) {
     super.oninit(vnode);
     this.loading = false;
     this.isFetchingModels = false;
     this.models = this.getModels();
+    this.modelMetadata = this.getModelMetadata();
+    this.recommendedModel = app.data.settings['muhammedsaidckr-chatgpt.auto_recommended_model'] || '';
   }
 
   getModels() {
@@ -55,7 +74,13 @@ export default class ChatGptSettings extends ExtensionPage {
     this.isFetchingModels = true;
 
     app
-      .request<{ models: any[]; count: number; last_fetched: number }>({
+      .request<{
+        models: any[];
+        model_metadata: ModelMetadataMap;
+        recommended_model: string | null;
+        count: number;
+        last_fetched: number;
+      }>({
         method: 'POST',
         url: app.forum.attribute('apiUrl') + '/chatgpt/fetch-models',
       })
@@ -65,10 +90,14 @@ export default class ChatGptSettings extends ExtensionPage {
 
           // Update cached models in settings
           app.data.settings['muhammedsaidckr-chatgpt.cached_models'] = JSON.stringify(response.models);
+          app.data.settings['muhammedsaidckr-chatgpt.cached_model_metadata'] = JSON.stringify(response.model_metadata || {});
           app.data.settings['muhammedsaidckr-chatgpt.models_last_fetched'] = response.last_fetched.toString();
+          app.data.settings['muhammedsaidckr-chatgpt.auto_recommended_model'] = response.recommended_model || '';
 
           // Refresh models list
           this.models = this.getModels();
+          this.modelMetadata = this.getModelMetadata();
+          this.recommendedModel = response.recommended_model || '';
 
           app.alerts.show(
             {
@@ -94,6 +123,70 @@ export default class ChatGptSettings extends ExtensionPage {
           m.redraw();
         }
       );
+  }
+
+  getModelMetadata(): ModelMetadataMap {
+    try {
+      const cachedModelMetadata = app.data.settings['muhammedsaidckr-chatgpt.cached_model_metadata'];
+      if (!cachedModelMetadata || cachedModelMetadata === '{}') {
+        return {};
+      }
+
+      const parsed = JSON.parse(cachedModelMetadata);
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse cached model metadata:', e);
+    }
+
+    return {};
+  }
+
+  applyPresetForModel(modelId: string, showAlert = true) {
+    const metadata = this.modelMetadata[modelId];
+    if (!metadata || !metadata.preset) {
+      return;
+    }
+
+    this.setting('muhammedsaidckr-chatgpt.max_tokens')(metadata.preset.max_tokens.toString());
+    this.setting('muhammedsaidckr-chatgpt.gpt5_reasoning_effort')(metadata.preset.gpt5_reasoning_effort);
+    this.setting('muhammedsaidckr-chatgpt.gpt5_verbosity')(metadata.preset.gpt5_verbosity);
+    this.setting('muhammedsaidckr-chatgpt.last_applied_preset_model')(modelId);
+
+    if (showAlert) {
+      app.alerts.show(
+        { type: 'success' },
+        app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.preset_applied_success', {
+          model: modelId,
+        })
+      );
+    }
+  }
+
+  applyRecommendedModel() {
+    if (!this.recommendedModel) {
+      return;
+    }
+
+    this.setting('muhammedsaidckr-chatgpt.model')(this.recommendedModel);
+    this.applyPresetForModel(this.recommendedModel, false);
+
+    app.alerts.show(
+      { type: 'success' },
+      app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.recommended_model_applied_success', {
+        model: this.recommendedModel,
+      })
+    );
+  }
+
+  applyPresetForSelectedModel() {
+    const selectedModel = this.setting('muhammedsaidckr-chatgpt.model')();
+    if (!selectedModel) {
+      return;
+    }
+
+    this.applyPresetForModel(selectedModel);
   }
 
   getLastFetchedText() {
@@ -150,6 +243,21 @@ export default class ChatGptSettings extends ExtensionPage {
                 >
                   {app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.fetch_models_button')}
                 </Button>
+                <Button
+                  className="Button"
+                  onclick={() => this.applyRecommendedModel()}
+                  disabled={!this.recommendedModel}
+                >
+                  {app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.apply_recommended_model_button')}
+                </Button>
+                <Button className="Button" onclick={() => this.applyPresetForSelectedModel()}>
+                  {app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.apply_model_preset_button')}
+                </Button>
+                <p className="helpText">
+                  {app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.recommended_model_help', {
+                    model: this.recommendedModel || '-',
+                  })}
+                </p>
                 <p className="helpText">{this.getLastFetchedText()}</p>
               </div>
             </div>

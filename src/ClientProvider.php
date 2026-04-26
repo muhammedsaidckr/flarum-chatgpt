@@ -66,6 +66,11 @@ class ClientProvider extends AbstractServiceProvider
             client: $client,
             model: $settings->get('muhammedsaidckr-chatgpt.custom_model') ?: $settings->get('muhammedsaidckr-chatgpt.model'),
             maxTokens: $settings->get('muhammedsaidckr-chatgpt.max_tokens'),
+            modelCatalog: new ModelCatalog(),
+            pricingCalculator: new PricingCalculator(
+                $settings->get('muhammedsaidckr-chatgpt.pricing_version', PricingCalculator::DEFAULT_VERSION)
+            ),
+            metricsRecorder: new ModelMetricsRecorder(),
         );
 
         return $agent;

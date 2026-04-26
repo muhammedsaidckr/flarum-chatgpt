@@ -15,16 +15,25 @@ class Agent
 {
     protected int $maxTokens;
     protected string $model;
+    protected ModelCatalog $modelCatalog;
+    protected ?PricingCalculator $pricingCalculator;
+    protected ?ModelMetricsRecorder $metricsRecorder;
 
     public function __construct(
         public readonly User $user,
         protected ?OpenAIClientInterface    $client = null,
         ?string               $model = null,
-        ?int                  $maxTokens = null
+        ?int                  $maxTokens = null,
+        ?ModelCatalog         $modelCatalog = null,
+        ?PricingCalculator    $pricingCalculator = null,
+        ?ModelMetricsRecorder $metricsRecorder = null
     )
     {
         $this->model = $model ?? 'gpt-3.5-turbo-instruct';
         $this->maxTokens = $maxTokens ?? 100;
+        $this->modelCatalog = $modelCatalog ?? new ModelCatalog();
+        $this->pricingCalculator = $pricingCalculator;
+        $this->metricsRecorder = $metricsRecorder;
     }
 
     public function repliesTo(Discussion $discussion): void
@@ -240,6 +249,7 @@ class Agent
     private function sendCompletionRequest(array $messages, ?int $discussionId = null)
     {
         $log = resolve('log');
+        $startedAt = microtime(true);
 
         try {
             $params = [
@@ -269,6 +279,21 @@ class Agent
                 'choice_count' => count($response->choices ?? [])
             ]);
 
+            $usage = $this->extractChatUsage($response);
+            $this->recordMetrics([
+                'discussion_id' => $discussionId,
+                'model' => $this->model,
+                'model_family' => $this->modelCatalog->getFamily($this->model),
+                'api_mode' => 'chat_completions',
+                'status' => !empty($response->choices) ? 'success' : 'empty',
+                'prompt_tokens' => $usage['prompt_tokens'],
+                'completion_tokens' => $usage['completion_tokens'],
+                'total_tokens' => $usage['total_tokens'],
+                'latency_ms' => $this->elapsedMs($startedAt),
+                'had_refusal' => $this->hasRefusal($response),
+                'error_message' => null,
+            ]);
+
             return $response;
         } catch (\OpenAI\Exceptions\ErrorException $e) {
             $log->error('[ChatGPT] OpenAI API Error', [
@@ -279,12 +304,40 @@ class Agent
                 'token_param' => $this->isReasoningModel() ? 'max_completion_tokens' : 'max_tokens',
                 'token_value' => $this->maxTokens
             ]);
+
+            $this->recordMetrics([
+                'discussion_id' => $discussionId,
+                'model' => $this->model,
+                'model_family' => $this->modelCatalog->getFamily($this->model),
+                'api_mode' => 'chat_completions',
+                'status' => 'error',
+                'prompt_tokens' => 0,
+                'completion_tokens' => 0,
+                'total_tokens' => 0,
+                'latency_ms' => $this->elapsedMs($startedAt),
+                'had_refusal' => false,
+                'error_message' => $e->getMessage(),
+            ]);
             throw $e;
         } catch (\Exception $e) {
             $log->error('[ChatGPT] Unexpected error in sendCompletionRequest', [
                 'exception' => get_class($e),
                 'message' => $e->getMessage(),
                 'model' => $this->model
+            ]);
+
+            $this->recordMetrics([
+                'discussion_id' => $discussionId,
+                'model' => $this->model,
+                'model_family' => $this->modelCatalog->getFamily($this->model),
+                'api_mode' => 'chat_completions',
+                'status' => 'error',
+                'prompt_tokens' => 0,
+                'completion_tokens' => 0,
+                'total_tokens' => 0,
+                'latency_ms' => $this->elapsedMs($startedAt),
+                'had_refusal' => false,
+                'error_message' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -294,6 +347,7 @@ class Agent
     {
         $log = resolve('log');
         $settings = resolve(SettingsRepositoryInterface::class);
+        $startedAt = microtime(true);
 
         try {
             $params = [
@@ -376,6 +430,21 @@ class Agent
                 $this->storeCoT($discussionId, $cot);
             }
 
+            $usage = $this->extractResponsesUsage($response);
+            $this->recordMetrics([
+                'discussion_id' => $discussionId,
+                'model' => $this->model,
+                'model_family' => $this->modelCatalog->getFamily($this->model),
+                'api_mode' => 'responses',
+                'status' => !empty($content) ? 'success' : ($response->status ?? 'empty'),
+                'prompt_tokens' => $usage['prompt_tokens'],
+                'completion_tokens' => $usage['completion_tokens'],
+                'total_tokens' => $usage['total_tokens'],
+                'latency_ms' => $this->elapsedMs($startedAt),
+                'had_refusal' => !empty($refusal),
+                'error_message' => null,
+            ]);
+
             // We need to normalize the response to match the ChatCompletion format 
             // so that saveResponse() continues to work.
             return (object) [
@@ -396,6 +465,20 @@ class Agent
                 'message' => $e->getMessage(),
                 'model' => $this->model
             ]);
+
+            $this->recordMetrics([
+                'discussion_id' => $discussionId,
+                'model' => $this->model,
+                'model_family' => $this->modelCatalog->getFamily($this->model),
+                'api_mode' => 'responses',
+                'status' => 'error',
+                'prompt_tokens' => 0,
+                'completion_tokens' => 0,
+                'total_tokens' => 0,
+                'latency_ms' => $this->elapsedMs($startedAt),
+                'had_refusal' => false,
+                'error_message' => $e->getMessage(),
+            ]);
             throw $e;
         }
     }
@@ -414,6 +497,64 @@ class Agent
         return $record ? $record->cot : null;
     }
 
+    private function elapsedMs(float $startedAt): int
+    {
+        return (int) round((microtime(true) - $startedAt) * 1000);
+    }
+
+    private function extractChatUsage($response): array
+    {
+        $promptTokens = (int) ($response->usage->prompt_tokens ?? 0);
+        $completionTokens = (int) ($response->usage->completion_tokens ?? 0);
+        $totalTokens = (int) ($response->usage->total_tokens ?? ($promptTokens + $completionTokens));
+
+        return [
+            'prompt_tokens' => $promptTokens,
+            'completion_tokens' => $completionTokens,
+            'total_tokens' => $totalTokens,
+        ];
+    }
+
+    private function extractResponsesUsage($response): array
+    {
+        $promptTokens = (int) ($response->usage->input_tokens ?? 0);
+        $completionTokens = (int) ($response->usage->output_tokens ?? 0);
+        $totalTokens = (int) ($response->usage->total_tokens ?? ($promptTokens + $completionTokens));
+
+        return [
+            'prompt_tokens' => $promptTokens,
+            'completion_tokens' => $completionTokens,
+            'total_tokens' => $totalTokens,
+        ];
+    }
+
+    private function hasRefusal($response): bool
+    {
+        $choice = Arr::first($response->choices ?? []);
+        return !empty($choice->message->refusal ?? null);
+    }
+
+    private function recordMetrics(array $metric): void
+    {
+        if (!$this->metricsRecorder) {
+            return;
+        }
+
+        if ($this->pricingCalculator) {
+            $metric['estimated_cost_usd'] = $this->pricingCalculator->estimate(
+                $metric['model'] ?? $this->model,
+                (int) ($metric['prompt_tokens'] ?? 0),
+                (int) ($metric['completion_tokens'] ?? 0)
+            );
+            $metric['pricing_version'] = $this->pricingCalculator->getVersion();
+        } else {
+            $metric['estimated_cost_usd'] = 0.0;
+            $metric['pricing_version'] = PricingCalculator::DEFAULT_VERSION;
+        }
+
+        $this->metricsRecorder->record($metric);
+    }
+
     /**
      * Determine if the current model is a reasoning model.
      * Reasoning models (o1, o3, o4, gpt-5 series) require max_completion_tokens
@@ -423,23 +564,12 @@ class Agent
      */
     private function isGpt5Model(): bool
     {
-        return str_contains(strtolower($this->model), 'gpt-5');
+        return $this->modelCatalog->isGpt5Model($this->model);
     }
 
     private function isReasoningModel(): bool
     {
-        $modelLower = strtolower($this->model);
-
-        // Check for reasoning model patterns (o1, o3, o4, gpt-5)
-        $reasoningPatterns = ['o1', 'o3', 'o4', 'gpt-5'];
-
-        foreach ($reasoningPatterns as $pattern) {
-            if (str_contains($modelLower, $pattern)) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->modelCatalog->isReasoningModel($this->model);
     }
 
 
