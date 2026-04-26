@@ -243,11 +243,7 @@ export default class ChatGptSettings extends ExtensionPage {
                 >
                   {app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.fetch_models_button')}
                 </Button>
-                <Button
-                  className="Button"
-                  onclick={() => this.applyRecommendedModel()}
-                  disabled={!this.recommendedModel}
-                >
+                <Button className="Button" onclick={() => this.applyRecommendedModel()} disabled={!this.recommendedModel}>
                   {app.translator.trans('muhammedsaidckr-chatgpt.admin.settings.apply_recommended_model_button')}
                 </Button>
                 <Button className="Button" onclick={() => this.applyPresetForSelectedModel()}>
