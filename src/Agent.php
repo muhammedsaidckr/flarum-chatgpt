@@ -445,8 +445,15 @@ class Agent
                 'error_message' => null,
             ]);
 
-            // We need to normalize the response to match the ChatCompletion format 
-            // so that saveResponse() continues to work.
+            // Normalize the response to ChatCompletion-like shape so saveResponse() can consume it.
+            // If GPT-5 returns incomplete with no text, return empty choices to skip save attempts.
+            if (empty($content)) {
+                return (object) [
+                    'choices' => [],
+                    'cot' => $cot,
+                ];
+            }
+
             return (object) [
                 'choices' => [
                     (object) [
@@ -457,7 +464,7 @@ class Agent
                         'finish_reason' => $response->status ?? 'stop',
                     ]
                 ],
-                'cot' => $cot
+                'cot' => $cot,
             ];
         } catch (\Exception $e) {
             $log->error('[ChatGPT] GPT-5 Responses API Error', [
